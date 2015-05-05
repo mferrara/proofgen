@@ -186,6 +186,7 @@ class Image {
     {
         $foreground_opacity = getenv('WATERMARK_FOREGROUND_OPACITY');
         $background_opacity = getenv('WATERMARK_BACKGROUND_OPACITY');
+        $text = ' '.$text.' ';
         $im = imagettfJustifytext($text,'',2,$width,getenv('SMALL_THUMBNAIL_BG_SIZE'),0,0,getenv('SMALL_THUMBNAIL_FONT_SIZE'), [255,255,255, $foreground_opacity], [0,0,0, $background_opacity]);
         return $im;
     }
