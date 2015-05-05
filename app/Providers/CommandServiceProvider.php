@@ -1,7 +1,6 @@
 <?php namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Console\Commands\ProcessImages;
 
 class CommandServiceProvider extends ServiceProvider
 {
@@ -13,13 +12,6 @@ class CommandServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton('command.proofgen.process', function()
-        {
-            return new ProcessImages;
-        });
 
-        $this->commands(
-            'command.proofgen.process'
-        );
     }
 }

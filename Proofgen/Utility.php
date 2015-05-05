@@ -6,6 +6,33 @@ use League\Flysystem\Adapter\Local as Adapter;
 
 class Utility {
 
+    public static function regenerateThumbnails($show, $class)
+    {
+        $base_path = getenv('FULLSIZE_HOME_DIR');
+        $class_path = implode('/', [$base_path, $show, $class]);
+
+        $originals_path = $class_path.'/originals';
+        $proofs_path    = $class_path.'/proofs';
+
+        // Remove existing proofs
+        $flysystem      = new Filesystem(new Adapter($class_path));
+        // Delete proofs directory
+        $flysystem->deleteDir('proofs');
+        // Recreate proofs directory
+        $flysystem->createDir('proofs');
+
+        // Get originals to process
+        $contents = self::getContentsOfPath($originals_path);
+        $images = $contents['images'];
+
+        foreach($images as $image)
+        {
+            $filename = $image['path'];
+            echo 'Regenerating proofs for '.$filename.PHP_EOL;
+            Image::checkImageForThumbnails($class_path,$filename,$show,$class);
+        }
+    }
+
     public static function getContentsOfPath($path, $recursive = false)
     {
         $flysystem      = new Filesystem(new Adapter($path));

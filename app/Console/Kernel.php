@@ -12,7 +12,8 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        //
+        'App\Console\Commands\ProcessImages',
+        'App\Console\Commands\RegenerateProofs'
     ];
 
     /**

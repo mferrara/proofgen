@@ -176,14 +176,17 @@ class Image {
 
         $font_size = getenv('LARGE_THUMBNAIL_FONT_SIZE');
         $background_height = getenv('LARGE_THUMBNAIL_BG_SIZE');
-
-        $im = imagettfJustifytext($text,'',2,$width,$background_height,0,0,$font_size, [255,255,255,45], [0,0,0, 70]);
+        $foreground_opacity = getenv('WATERMARK_FOREGROUND_OPACITY');
+        $background_opacity = getenv('WATERMARK_BACKGROUND_OPACITY');
+        $im = imagettfJustifytext($text,'',2,$width,$background_height,0,0,$font_size, [255,255,255, $foreground_opacity], [0,0,0, $background_opacity]);
         return $im;
     }
 
     public static function watermarkSmallProof($text, $width = 0)
     {
-        $im = imagettfJustifytext($text,'',2,$width,getenv('SMALL_THUMBNAIL_BG_SIZE'),0,0,getenv('SMALL_THUMBNAIL_FONT_SIZE'), [255,255,255,1], [0,0,0, 70]);
+        $foreground_opacity = getenv('WATERMARK_FOREGROUND_OPACITY');
+        $background_opacity = getenv('WATERMARK_BACKGROUND_OPACITY');
+        $im = imagettfJustifytext($text,'',2,$width,getenv('SMALL_THUMBNAIL_BG_SIZE'),0,0,getenv('SMALL_THUMBNAIL_FONT_SIZE'), [255,255,255, $foreground_opacity], [0,0,0, $background_opacity]);
         return $im;
     }
 
@@ -256,8 +259,8 @@ class Image {
             ]));
 
             // Copy the files from local to remote
-            $remote_fs->write($remote_path.'/'.$small_thumb_filename, file_get_contents($proofs_dest_path.'/'.$small_thumb_filename));
-            $remote_fs->write($remote_path.'/'.$large_thumb_filename, file_get_contents($proofs_dest_path.'/'.$large_thumb_filename));
+            $remote_fs->put($remote_path.'/'.$small_thumb_filename, file_get_contents($proofs_dest_path.'/'.$small_thumb_filename));
+            $remote_fs->put($remote_path.'/'.$large_thumb_filename, file_get_contents($proofs_dest_path.'/'.$large_thumb_filename));
 
             echo 'Thumbnails uploaded to remote server.'.PHP_EOL;
         }
