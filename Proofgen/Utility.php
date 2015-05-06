@@ -60,6 +60,22 @@ class Utility {
             }
         }
 
+        // If there's images, sort them by their timestamp
+        if(count($images))
+        {
+            var_dump($images);
+            // Sort images by timestamp
+            $temp_images = $images;
+            $images = array();
+            foreach ($temp_images as $key => $row)
+            {
+                $images[$key] = $row['timestamp'];
+            }
+            array_multisort($images, SORT_ASC, $temp_images);
+            $images = $temp_images;
+            unset($temp_images);
+        }
+
         return [
             'directories'   => $directories,
             'images'        => $images
