@@ -34,7 +34,7 @@ class ProcessImages extends Command {
 
         $this->info('Starting...');
         $base_path  = getenv('FULLSIZE_HOME_DIR');
-        $max_images = 50;
+        $max_images = 500;
         $this->info('Checking '.$base_path.' for new images.. ');
 
         $contents = Utility::getContentsOfPath($base_path);
