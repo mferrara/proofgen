@@ -63,7 +63,6 @@ class Utility {
         // If there's images, sort them by their timestamp
         if(count($images))
         {
-            var_dump($images);
             // Sort images by timestamp
             $temp_images = $images;
             $images = array();
@@ -71,7 +70,10 @@ class Utility {
             {
                 $images[$key] = $row['timestamp'];
             }
+            $time = time();
             array_multisort($images, SORT_ASC, $temp_images);
+            $taken = time() - $time;
+            echo $taken . ' seconds to sort the directory'.PHP_EOL;
             $images = $temp_images;
             unset($temp_images);
         }
