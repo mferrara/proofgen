@@ -25,8 +25,11 @@ class Image {
             $flysystem = new Filesystem(new Adapter($full_class_path));
             $archive_fs = new Filesystem(new Adapter($archive_base_path));
             // Copy the file to originals path
-            $flysystem->copy($image['path'], 'originals/'.$image['path']);
+
+
+
             echo 'Copying image...';
+            $flysystem->copy($image['path'], 'originals/'.$image['path']);
 
             // Confirm the copy
             if($flysystem->has('originals/'.$image['path']))
@@ -47,13 +50,35 @@ class Image {
 
                     if($archive_fs->has($archive_file_path))
                     {
-                        echo 'Archived copy confirmed, deleting original.'.PHP_EOL;
-                        // Delete the input file
-                        $flysystem->delete($image['path']);
 
-                        echo 'Creating thumbnails...';
-                        // Create the thumbnails if they're not already there
-                        self::checkImageForThumbnails($full_class_path, $proof_filename, $show, $class);
+                        try{
+
+                            echo 'Creating thumbnails...';
+                            // Create the thumbnails if they're not already there
+                            self::checkImageForThumbnails($full_class_path, $proof_filename, $show, $class);
+
+                            echo 'Archived copy confirmed, deleting original.'.PHP_EOL;
+                            // Delete the input file
+                            $flysystem->delete($image['path']);
+
+                        }
+                        catch(Exception $e)
+                        {
+                            echo 'Error creating thumbnails/uploading, resetting image.'.PHP_EOL;
+
+                            $temp_filename = 'temp'.rand(0,999999).'.jpg';
+
+                            $flysystem->copy('originals/'.$proof_filename, $temp_filename);
+
+                            echo 'Confirming reset of image.'.PHP_EOL;
+                            if($flysystem->has($temp_filename))
+                            {
+                                $flysystem->delete('originals/'.$proof_filename);
+                                echo 'Original moved back to processing folder, ready to try again.'.PHP_EOL;
+                            }
+
+                            dd('Error - '. $e->getMessage());
+                        }
 
                         return $proof_filename;
                     }
