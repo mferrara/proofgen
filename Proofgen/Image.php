@@ -57,12 +57,14 @@ class Image {
                             // Create the thumbnails if they're not already there
                             self::checkImageForThumbnails($full_class_path, $proof_filename, $show, $class);
 
-                            echo 'Archived copy confirmed, deleting original.'.PHP_EOL;
+                            self::uploadThumbnails($show, $class, $proof_number);
+
+                            echo 'Archived copy confirmed, thumbnails created & uploaded, deleting original.'.PHP_EOL;
                             // Delete the input file
                             $flysystem->delete($image['path']);
 
                         }
-                        catch(Exception $e)
+                        catch(\ErrorException $e)
                         {
                             echo 'Error creating thumbnails/uploading, resetting image.'.PHP_EOL;
 
@@ -126,7 +128,7 @@ class Image {
             ||  ! $flysystem->has($small_thumb_filename))
         {
             // Doesn't exist, create it
-            self::createThumbnails($fullsize_path, $class_proofs_path, $show, $class);
+            self::createThumbnails($fullsize_path, $class_proofs_path);
             $created = true;
         }
 
@@ -192,15 +194,8 @@ class Image {
 
     public static function watermarkLargeProof($text, $width = 0)
     {
-        $font_size = 16;
-        $background_height = 36;
-        if($width > 800){
-            $font_size = 22;
-            $background_height = 42;
-        }
-
-        $font_size = getenv('LARGE_THUMBNAIL_FONT_SIZE');
-        $background_height = getenv('LARGE_THUMBNAIL_BG_SIZE');
+        $font_size          = getenv('LARGE_THUMBNAIL_FONT_SIZE');
+        $background_height  = getenv('LARGE_THUMBNAIL_BG_SIZE');
         $foreground_opacity = getenv('WATERMARK_FOREGROUND_OPACITY');
         $background_opacity = getenv('WATERMARK_BACKGROUND_OPACITY');
         $im = imagettfJustifytext($text,'',2,$width,$background_height,0,0,$font_size, [255,255,255, $foreground_opacity], [0,0,0, $background_opacity]);
@@ -209,14 +204,16 @@ class Image {
 
     public static function watermarkSmallProof($text, $width = 0)
     {
+        $font_size          = getenv('SMALL_THUMBNAIL_FONT_SIZE');
+        $background_height  = getenv('SMALL_THUMBNAIL_BG_SIZE');
         $foreground_opacity = getenv('WATERMARK_FOREGROUND_OPACITY');
         $background_opacity = getenv('WATERMARK_BACKGROUND_OPACITY');
         $text = ' '.$text.' ';
-        $im = imagettfJustifytext($text,'',2,$width,getenv('SMALL_THUMBNAIL_BG_SIZE'),0,0,getenv('SMALL_THUMBNAIL_FONT_SIZE'), [255,255,255, $foreground_opacity], [0,0,0, $background_opacity]);
+        $im = imagettfJustifytext($text,'',2,$width,$background_height,0,0,$font_size, [255,255,255, $foreground_opacity], [0,0,0, $background_opacity]);
         return $im;
     }
 
-    public static function createThumbnails($full_size_image_path, $proofs_dest_path, $show_name, $class_name, $upload = true)
+    public static function createThumbnails($full_size_image_path, $proofs_dest_path)
     {
         $manager            = new ImageManager();
 
@@ -267,32 +264,40 @@ class Image {
 
         echo 'Thumbnails created.'.PHP_EOL;
 
-        // Send the thumbnails to the server
-        if($upload)
-        {
-            echo 'Uploading thumbnails...';
-
-            // Generate this photo's show/class path
-            $remote_path = $show_name.'/'.$class_name;
-            // Connect to the remote server
-            $remote_fs = new Filesystem(new SftpAdapter([
-                'host'      => getenv('SFTP_HOSTNAME'),
-                'port'      => 22,
-                'username'  => getenv('SFTP_USERNAME'),
-                'privateKey'=> getenv('SFTP_PATHTOPRIVATEKEY'),
-                'root'      => getenv('SFTP_PROOFSPATH'),
-                'timeout'   => 10,
-            ]));
-
-            // Copy the files from local to remote
-            $remote_fs->put($remote_path.'/'.$small_thumb_filename, file_get_contents($proofs_dest_path.'/'.$small_thumb_filename));
-            $remote_fs->put($remote_path.'/'.$large_thumb_filename, file_get_contents($proofs_dest_path.'/'.$large_thumb_filename));
-
-            echo 'Thumbnails uploaded to remote server.'.PHP_EOL;
-        }
-
         unset($manager);
         unset($image);
+
+        return $image_filename;
+    }
+
+    public static function uploadThumbnails($show_name, $class_name, $proof_number)
+    {
+        echo 'Uploading thumbnails...';
+
+        // Generate this photo's show/class path
+        $remote_path = $show_name.'/'.$class_name;
+        // Connect to the remote server
+        $remote_fs = new Filesystem(new SftpAdapter([
+            'host'      => getenv('SFTP_HOSTNAME'),
+            'port'      => 22,
+            'username'  => getenv('SFTP_USERNAME'),
+            'privateKey'=> getenv('SFTP_PATHTOPRIVATEKEY'),
+            'root'      => getenv('SFTP_PROOFSPATH'),
+            'timeout'   => 10,
+        ]));
+
+        $lrg_suf            = getenv('LARGE_THUMBNAIL_SUFFIX');
+        $sml_suf            = getenv('SMALL_THUMBNAIL_SUFFIX');
+        $image_filename     = $proof_number;
+        $large_thumb_filename = $image_filename.$lrg_suf.'.jpg';
+        $small_thumb_filename = $image_filename.$sml_suf.'.jpg';
+        $proofs_dest_path   = getenv('FULLSIZE_HOME_DIR').'/'.$show_name.'/'.$class_name.'/proofs';
+
+        // Copy the files from local to remote
+        $remote_fs->put($remote_path.'/'.$small_thumb_filename, file_get_contents($proofs_dest_path.'/'.$small_thumb_filename));
+        $remote_fs->put($remote_path.'/'.$large_thumb_filename, file_get_contents($proofs_dest_path.'/'.$large_thumb_filename));
+
+        echo 'Thumbnails uploaded to remote server.'.PHP_EOL;
     }
 }
 
