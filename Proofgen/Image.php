@@ -46,7 +46,10 @@ class Image {
                     echo 'Rename confirmed, copying to archive'.PHP_EOL;
                     $archive_file_path  = $class_path.'/'.$proof_filename;
                     $image_data         = file_get_contents($home_dir.'/'.$class_path.'/originals/'.$proof_filename);
-                    $archive_fs->write($archive_file_path, $image_data);
+
+                    // Check for already existing image in the archive (left over from a previously failed run)
+                    if( ! $archive_fs->has($archive_file_path))
+                        $archive_fs->write($archive_file_path, $image_data);
 
                     if($archive_fs->has($archive_file_path))
                     {
@@ -64,7 +67,7 @@ class Image {
                             $flysystem->delete($image['path']);
 
                         }
-                        catch(\ErrorException $e)
+                        catch(ErrorException $e)
                         {
                             echo 'Error creating thumbnails/uploading, resetting image.'.PHP_EOL;
 
@@ -79,7 +82,7 @@ class Image {
                                 echo 'Original moved back to processing folder, ready to try again.'.PHP_EOL;
                             }
 
-                            dd('Error - '. $e->getMessage());
+                            dd('Execution stopped due to error.');
                         }
 
                         return $proof_filename;
