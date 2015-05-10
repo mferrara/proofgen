@@ -60,16 +60,14 @@ class Image {
                             // Create the thumbnails if they're not already there
                             self::checkImageForThumbnails($full_class_path, $proof_filename, $show, $class);
 
-                            self::uploadThumbnails($show, $class, $proof_number);
-
-                            echo 'Archived copy confirmed, thumbnails created & uploaded, deleting original.'.PHP_EOL;
+                            echo 'Archived copy confirmed, thumbnails created, deleting original.'.PHP_EOL;
                             // Delete the input file
                             $flysystem->delete($image['path']);
 
                         }
                         catch(ErrorException $e)
                         {
-                            echo 'Error creating thumbnails/uploading, resetting image.'.PHP_EOL;
+                            echo 'Error creating thumbnails, resetting image.'.PHP_EOL;
 
                             $temp_filename = 'temp'.rand(0,999999).'.jpg';
 
@@ -273,12 +271,11 @@ class Image {
         return $image_filename;
     }
 
-    public static function uploadThumbnails($show_name, $class_name, $proof_number)
+    public static function uploadThumbnails($upload)
     {
-        echo 'Uploading thumbnails...';
+        $count = count($upload);
+        echo 'Uploading '.$count.' thumbnails...'.PHP_EOL;
 
-        // Generate this photo's show/class path
-        $remote_path = $show_name.'/'.$class_name;
         // Connect to the remote server
         $remote_fs = new Filesystem(new SftpAdapter([
             'host'      => getenv('SFTP_HOSTNAME'),
@@ -289,18 +286,41 @@ class Image {
             'timeout'   => 10,
         ]));
 
-        $lrg_suf            = getenv('LARGE_THUMBNAIL_SUFFIX');
-        $sml_suf            = getenv('SMALL_THUMBNAIL_SUFFIX');
-        $image_filename     = $proof_number;
-        $large_thumb_filename = $image_filename.$lrg_suf.'.jpg';
-        $small_thumb_filename = $image_filename.$sml_suf.'.jpg';
-        $proofs_dest_path   = getenv('FULLSIZE_HOME_DIR').'/'.$show_name.'/'.$class_name.'/proofs';
+        $processed = 0;
+        $total_upload_time = 0;
+        foreach($upload as $up)
+        {
+            $start_time = time();
+            $show_name = $up['show'];
+            $class_name = $up['class'];
+            $proof_number = explode('.', $up['file']);
+            $proof_number = $proof_number[0];
 
-        // Copy the files from local to remote
-        $remote_fs->put($remote_path.'/'.$small_thumb_filename, file_get_contents($proofs_dest_path.'/'.$small_thumb_filename));
-        $remote_fs->put($remote_path.'/'.$large_thumb_filename, file_get_contents($proofs_dest_path.'/'.$large_thumb_filename));
+            // Generate this photo's show/class path
+            $remote_path = $show_name.'/'.$class_name;
 
-        echo 'Thumbnails uploaded to remote server.'.PHP_EOL;
+            $lrg_suf            = getenv('LARGE_THUMBNAIL_SUFFIX');
+            $sml_suf            = getenv('SMALL_THUMBNAIL_SUFFIX');
+            $image_filename     = $proof_number;
+            $large_thumb_filename = $image_filename.$lrg_suf.'.jpg';
+            $small_thumb_filename = $image_filename.$sml_suf.'.jpg';
+            $proofs_dest_path   = getenv('FULLSIZE_HOME_DIR').'/'.$show_name.'/'.$class_name.'/proofs';
+
+            // Copy the files from local to remote
+            $remote_fs->put($remote_path.'/'.$small_thumb_filename, file_get_contents($proofs_dest_path.'/'.$small_thumb_filename));
+            $remote_fs->put($remote_path.'/'.$large_thumb_filename, file_get_contents($proofs_dest_path.'/'.$large_thumb_filename));
+
+            $end_time = time();
+            $upload_time = $end_time - $start_time;
+            $total_upload_time = $total_upload_time + $upload_time;
+            $processed++;
+
+
+            echo $proof_number.' uploaded in '.$upload_time.'s ('.$processed.'/'.$count.')'.PHP_EOL;
+
+        }
+
+        echo $count.' Thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
     }
 }
 

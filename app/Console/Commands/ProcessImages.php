@@ -34,20 +34,18 @@ class ProcessImages extends Command {
 
         $this->info('Starting...');
         $base_path  = getenv('FULLSIZE_HOME_DIR');
-        $max_images = 500;
         $this->info('Checking '.$base_path.' for new images.. ');
 
         $contents = Utility::getContentsOfPath($base_path);
         $shows    = $contents['directories'];
+        $upload = [];
 
         $this->info('Base path has '.count($shows).' directories.');
-        $this->info('Processing up to '.$max_images.' images this run.');
         $this->info('');
 
         unset($contents);
 
         $results = [];
-        $processed_count = 0;
         // Cycle through each show, checking for class folders and images within them
         foreach($shows as $directory)
         {
@@ -89,23 +87,29 @@ class ProcessImages extends Command {
 
                             $this->info('Importing '.$image['path'].'...');
                             $image_filename = Image::processNewImage($class_path, $image);
-                            $this->comment('Completed '.($processed_count+1).' of '.$max_images.' - '.$image['path'].' -> '.$image_filename);
+                            if($image_filename)
+                            {
+                                $upload[] = [
+                                    'path' => $class_path,
+                                    'file' => $image_filename,
+                                    'show' => $show_name,
+                                    'class'=> $class_name
+                                ];
+                            }
+                            $this->comment('Completed '.' - '.$image['path'].' -> '.$image_filename);
 
                             if(isset($results[$show_name][$class_name]))
                                 $results[$show_name][$class_name]++;
                             else
                                 $results[$show_name][$class_name] = 1;
-
-                            $processed_count++;
-
-                            if($processed_count >= $max_images)
-                            {
-                                $this->info('');
-                                $this->comment('Maximum images reached. Processing will continue next run.');
-                                break 3;
-                            }
                         }
                     }
+                }
+
+                // Upload any needed files
+                if(count($upload))
+                {
+                    Image::uploadThumbnails($upload);
                 }
             }
         }
