@@ -1,8 +1,9 @@
 # Proof management for ferraraphoto.com
 
-## Process new images found in:
+## Process new images found:
 
-All shows/classes
+Processes all new images found in the base show/class directories. The images will be renamed, thumbnailed, watermarked and uploaded.
+
 php artisan proofgen:process
 
 ## Rebuild thumbnails/upload to website
