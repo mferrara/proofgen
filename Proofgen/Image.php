@@ -310,11 +310,11 @@ class Image {
             $remote_fs->put($remote_path.'/'.$small_thumb_filename, file_get_contents($proofs_dest_path.'/'.$small_thumb_filename));
             $remote_fs->put($remote_path.'/'.$large_thumb_filename, file_get_contents($proofs_dest_path.'/'.$large_thumb_filename));
 
+
             $end_time = time();
             $upload_time = $end_time - $start_time;
             $total_upload_time = $total_upload_time + $upload_time;
             $processed++;
-
 
             echo $proof_number.' uploaded in '.$upload_time.'s ('.$processed.'/'.$count.')'.PHP_EOL;
 

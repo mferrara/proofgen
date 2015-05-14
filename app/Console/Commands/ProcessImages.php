@@ -109,7 +109,26 @@ class ProcessImages extends Command {
                 // Upload any needed files
                 if(count($upload))
                 {
-                    Image::uploadThumbnails($upload);
+
+                    try{
+                        Image::uploadThumbnails($upload);
+                    }
+                    catch(\ErrorException $e)
+                    {
+                        foreach($results as $s_name => $classes)
+                        {
+                            foreach($classes as $class_name => $count)
+                            {
+                                // Turn this into a dump into some sort of error_log that's created in the home directory and run through a proofgen:processerrorlog or something
+                                $error = 'upload '.$s_name.'/'.$class_name.PHP_EOL;
+                                Utility::addErrorLog($error);
+                            }
+                        }
+
+                        echo $e->getMessage().PHP_EOL;
+                        $this->info('Error caught, added to error log. Run "php artisan proofgen:errors to process them."');
+                    }
+
                 }
             }
         }

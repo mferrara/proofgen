@@ -48,6 +48,10 @@ class Utility {
                     $directories[] = $object;
                     break;
                 case "file":
+
+                    if($object['path'] == 'errors')
+                        break;
+
                     if(
                         $object['extension'] == 'JPG'
                         || $object['extension'] == 'JPEG'
@@ -130,6 +134,89 @@ class Utility {
             return true;
 
         return false;
+    }
+
+    public static function addErrorLog($string)
+    {
+        $string = trim($string);
+        $string = trim($string, "\r");
+        $string = trim($string, "\n");
+
+        $flysystem = new Filesystem(new Adapter(getenv('FULLSIZE_HOME_DIR')));
+
+        $errors = [];
+        if($flysystem->has('errors'))
+        {
+            $errors = $flysystem->read('errors');
+        }
+
+        if(count($errors))
+        {
+            $errors = explode("\r\n", $errors);
+        }
+
+        $add = true;
+
+        // If this error isn't already listed in the error doc, add it
+        if(count($errors) && in_array($string, $errors))
+            $add = false;
+
+        if($add)
+        {
+            $errors[] = $string;
+            $errors_string = implode("\r\n", $errors);
+            $flysystem->put('errors', $errors_string);
+        }
+    }
+
+    public static function parseErrorLog()
+    {
+        $flysystem = new Filesystem(new Adapter(getenv('FULLSIZE_HOME_DIR')));
+
+        $errors = null;
+        if($flysystem->has('errors'))
+        {
+            $errors = $flysystem->read('errors');
+        }
+
+        $return = [];
+        if($errors !== null)
+        {
+            $errors = explode("\r\n", $errors);
+
+            foreach($errors as $line)
+            {
+                $values = explode(' ', $line);
+                $return[] = [$values[0],$values[1]];
+            }
+        }
+
+        return $return;
+    }
+
+    public static function updateErrorLog($errors)
+    {
+        $base_path = getenv('FULLSIZE_HOME_DIR');
+
+        $out_errors = [];
+        foreach($errors as $key => $data)
+        {
+            $out_errors[] = implode(' ', $data);
+        }
+
+        $fly = new Filesystem(new Adapter($base_path));
+
+        if(count($out_errors))
+        {
+            $error_string = implode("\r\n", $out_errors);
+            $fly->delete('errors');
+            $fly->put('errors', $error_string);
+        }
+        else
+        {
+            if($fly->has('errors'))
+                $fly->delete('errors');
+        }
     }
 
 }
