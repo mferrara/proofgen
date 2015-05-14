@@ -10,3 +10,7 @@ php artisan proofgen:process
 This will remove all existing thumbnails, re-producing and uploading them
 
 php artisan proofgen:regenerate
+
+# Process all errors, attempting to complete the failed jobs
+
+php artisan proofgen:errors
