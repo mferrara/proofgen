@@ -236,6 +236,7 @@ class Image {
         $watermark = self::watermarkSmallProof($image_filename);
         $image->insert($watermark, 'bottom-left', 10, 10)->save();
 
+        unset($watermark);
         unset($image);
 
         // Save large thumbnail
@@ -245,6 +246,8 @@ class Image {
             $constraint->upsize();
         })->save($proofs_dest_path.'/'.$large_thumb_filename, getenv('LARGE_THUMBNAIL_QUALITY'));
 
+        unset($image);
+
         // Add watermark
         $image = $manager->make($proofs_dest_path.'/'.$large_thumb_filename);
 
@@ -253,6 +256,7 @@ class Image {
             $text = 'Proof# '.$image_filename.' - Illegal to use - Ferrara Photography';
             $watermark = self::watermarkLargeProof($text, $image->width());
             $image->insert($watermark, 'center')->save();
+            unset($watermark);
         }
         else
         {
@@ -261,6 +265,8 @@ class Image {
             $top_offset = round($image->height() * 0.2);
             $bottom_offset = round($image->height() * 0.2);
             $image->insert($watermark_top, 'top', 0, $top_offset)->insert($watermark_bot, 'bottom', 0, $bottom_offset)->save();
+            unset($watermark_top);
+            unset($watermark_bot);
         }
 
         echo 'Thumbnails created.'.PHP_EOL;

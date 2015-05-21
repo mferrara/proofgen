@@ -30,7 +30,11 @@ class Utility {
             $filename = $image['path'];
             echo 'Regenerating proofs for '.$filename.PHP_EOL;
             Image::checkImageForThumbnails($class_path,$filename,$show,$class);
+            unset($filename);
         }
+        unset($images);
+        unset($flysystem);
+        unset($contents);
     }
 
     public static function getContentsOfPath($path, $recursive = false)

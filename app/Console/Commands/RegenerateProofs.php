@@ -155,6 +155,7 @@ class RegenerateProofs extends Command {
                         'class'=> $class
                     ];
                 }
+                unset($images);
             }
 
             $this->info('Thumbnail regeneration complete.');
