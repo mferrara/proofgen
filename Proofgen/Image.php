@@ -49,13 +49,19 @@ class Image {
 
                     // Check for already existing image in the archive (left over from a previously failed run)
                     if( ! $archive_fs->has($archive_file_path))
+                    {
                         $archive_fs->write($archive_file_path, $image_data);
+                    }
+
+                    $image_data = null;
+                    unset($image_data);
 
                     if($archive_fs->has($archive_file_path))
                     {
 
                         try{
 
+                            echo 'Memory used at start of thumbnails: '.self::convert(memory_get_usage(true)).PHP_EOL;
                             echo 'Creating thumbnails...';
                             // Create the thumbnails if they're not already there
                             self::checkImageForThumbnails($full_class_path, $proof_filename, $show, $class);
@@ -83,6 +89,11 @@ class Image {
                             dd('Execution stopped due to error.');
                         }
 
+                        $flysystem = null;
+                        $archive_fs = null;
+                        unset($flysystem);
+                        unset($archive_fs);
+
                         return $proof_filename;
                     }
                     else
@@ -95,9 +106,15 @@ class Image {
                     dd('File rename failed');
                 }
             }
-            else{
+            else
+            {
                 dd('File copy failed');
             }
+
+            $flysystem = null;
+            $archive_fs = null;
+            unset($flysystem);
+            unset($archive_fs);
         }
 
         return false;
@@ -132,7 +149,7 @@ class Image {
             self::createThumbnails($fullsize_path, $class_proofs_path);
             $created = true;
         }
-
+        $flysystem = null;
         unset($flysystem);
 
         return $created;
@@ -236,6 +253,8 @@ class Image {
         $watermark = self::watermarkSmallProof($image_filename);
         $image->insert($watermark, 'bottom-left', 10, 10)->save();
 
+        $watermark = null;
+        $image = null;
         unset($watermark);
         unset($image);
 
@@ -246,6 +265,7 @@ class Image {
             $constraint->upsize();
         })->save($proofs_dest_path.'/'.$large_thumb_filename, getenv('LARGE_THUMBNAIL_QUALITY'));
 
+        $image = null;
         unset($image);
 
         // Add watermark
@@ -256,6 +276,8 @@ class Image {
             $text = 'Proof# '.$image_filename.' - Illegal to use - Ferrara Photography';
             $watermark = self::watermarkLargeProof($text, $image->width());
             $image->insert($watermark, 'center')->save();
+
+            $watermark = null;
             unset($watermark);
         }
         else
@@ -265,14 +287,21 @@ class Image {
             $top_offset = round($image->height() * 0.2);
             $bottom_offset = round($image->height() * 0.2);
             $image->insert($watermark_top, 'top', 0, $top_offset)->insert($watermark_bot, 'bottom', 0, $bottom_offset)->save();
+
+            $watermark_top = null;
+            $watermark_bot = null;
             unset($watermark_top);
             unset($watermark_bot);
         }
 
         echo 'Thumbnails created.'.PHP_EOL;
 
+        $manager = null;
+        $image = null;
         unset($manager);
         unset($image);
+
+        echo 'Memory used at end of thumbnails:   '.self::convert(memory_get_usage(true)).PHP_EOL;
 
         return $image_filename;
     }
@@ -312,10 +341,17 @@ class Image {
             $small_thumb_filename = $image_filename.$sml_suf.'.jpg';
             $proofs_dest_path   = getenv('FULLSIZE_HOME_DIR').'/'.$show_name.'/'.$class_name.'/proofs';
 
-            // Copy the files from local to remote
-            $remote_fs->put($remote_path.'/'.$small_thumb_filename, file_get_contents($proofs_dest_path.'/'.$small_thumb_filename));
-            $remote_fs->put($remote_path.'/'.$large_thumb_filename, file_get_contents($proofs_dest_path.'/'.$large_thumb_filename));
+            $small_thumbnail    = file_get_contents($proofs_dest_path.'/'.$small_thumb_filename);
+            $large_thumbnail    = file_get_contents($proofs_dest_path.'/'.$large_thumb_filename);
 
+            // Copy the files from local to remote
+            $remote_fs->put($remote_path.'/'.$small_thumb_filename, $small_thumbnail);
+            $remote_fs->put($remote_path.'/'.$large_thumb_filename, $large_thumbnail);
+
+            $small_thumbnail = null;
+            unset($small_thumbnail);
+            $large_thumbnail = null;
+            unset($large_thumbnail);
 
             $end_time = microtime(true);
             $upload_time = number_format(($end_time - $start_time));
@@ -328,6 +364,13 @@ class Image {
 
         echo $count.' Thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
     }
+
+    public static function convert($size)
+    {
+        $unit=array('b','kb','mb','gb','tb','pb');
+        return @round($size/pow(1024,($i=floor(log($size,1024)))),2).' '.$unit[$i];
+    }
+
 }
 
 /**
