@@ -138,10 +138,51 @@ class RegenerateProofs extends Command {
             foreach($classes_to_run as $class)
             {
                 $this->info('Generating thumbnails for class '.$class);
+
                 Utility::regenerateThumbnails($show, $class);
+
+                // Get array of images in the originals path, to process into uploads
+                $images = Utility::getContentsOfPath($base_path.'/'.$show.'/'.$class.'/originals');
+                $images = $images['images'];
+
+                // Add each image to an array for upload
+                foreach($images as $image)
+                {
+                    $upload[] = [
+                        'path' => $base_path.'/'.$show.'/'.$class,
+                        'file' => $image['basename'],
+                        'show' => $show,
+                        'class'=> $class
+                    ];
+                }
             }
 
             $this->info('Thumbnail regeneration complete.');
+            $this->info('');
+            $this->info('Starting upload...');
+
+            // Upload any needed files
+            if(count($upload))
+            {
+
+                try{
+                    Image::uploadThumbnails($upload);
+                }
+                catch(\ErrorException $e)
+                {
+
+                    foreach($classes_to_run as $class_name)
+                    {
+                        // Turn this into a dump into some sort of error_log that's created in the home directory and run through a proofgen:errors or something
+                        $error = 'upload '.$show.'/'.$class_name.PHP_EOL;
+                        Utility::addErrorLog($error);
+                    }
+
+                    echo $e->getMessage().PHP_EOL;
+                    $this->info('Error caught, added to error log. Run "php artisan proofgen:errors to process them."');
+                }
+
+            }
         }
 
         $this->info('');
