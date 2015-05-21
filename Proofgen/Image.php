@@ -290,7 +290,7 @@ class Image {
         $total_upload_time = 0;
         foreach($upload as $up)
         {
-            $start_time = time();
+            $start_time = microtime(true);
             $show_name = $up['show'];
             $class_name = $up['class'];
             $proof_number = explode('.', $up['file']);
@@ -311,12 +311,12 @@ class Image {
             $remote_fs->put($remote_path.'/'.$large_thumb_filename, file_get_contents($proofs_dest_path.'/'.$large_thumb_filename));
 
 
-            $end_time = time();
-            $upload_time = $end_time - $start_time;
+            $end_time = microtime(true);
+            $upload_time = number_format(($end_time - $start_time));
             $total_upload_time = $total_upload_time + $upload_time;
             $processed++;
 
-            echo $proof_number.' uploaded in '.$upload_time.'s ('.$processed.'/'.$count.')'.PHP_EOL;
+            echo $proof_number.' uploaded in '.$upload_time.' (s) ('.$processed.'/'.$count.')'.PHP_EOL;
 
         }
 

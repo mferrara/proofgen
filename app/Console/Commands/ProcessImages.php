@@ -86,6 +86,7 @@ class ProcessImages extends Command {
                             $image_path = $class_path.'/'.$image['path'];
 
                             $this->info('Importing '.$image['path'].'...');
+                            $start = microtime(true);
                             $image_filename = Image::processNewImage($class_path, $image);
                             if($image_filename)
                             {
@@ -96,7 +97,9 @@ class ProcessImages extends Command {
                                     'class'=> $class_name
                                 ];
                             }
-                            $this->comment('Completed '.' - '.$image['path'].' -> '.$image_filename);
+                            $end = microtime(true);
+                            $total = number_format(($end - $start));
+                            $this->comment('Completed '.' - '.$image['path'].' -> '.$image_filename.' in '.$total.' (s)');
 
                             if(isset($results[$show_name][$class_name]))
                                 $results[$show_name][$class_name]++;
