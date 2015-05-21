@@ -35,17 +35,20 @@ class ProcessImages extends Command {
         $this->info('Starting...');
         $base_path  = getenv('FULLSIZE_HOME_DIR');
         $this->info('Checking '.$base_path.' for new images.. ');
+        $max_images = getenv('MAX_IMAGES_PER_RUN');
 
         $contents = Utility::getContentsOfPath($base_path);
         $shows    = $contents['directories'];
         $upload = [];
 
         $this->info('Base path has '.count($shows).' directories.');
+        $this->info('Processing up to '.$max_images.' images this run.');
         $this->info('');
 
         unset($contents);
 
         $results = [];
+        $processed_count = 0;
         // Cycle through each show, checking for class folders and images within them
         foreach($shows as $directory)
         {
@@ -99,41 +102,51 @@ class ProcessImages extends Command {
                             }
                             $end = microtime(true);
                             $total = number_format(($end - $start));
-                            $this->comment('Completed '.' - '.$image['path'].' -> '.$image_filename.' in '.$total.' (s)');
+                            $processed_count++;
+                            $this->comment('Completed '.' - '.$image['path'].' -> '.$image_filename.' in '.$total.' (s)'.' ('.$processed_count.'/'.$max_images.')');
 
                             if(isset($results[$show_name][$class_name]))
                                 $results[$show_name][$class_name]++;
                             else
                                 $results[$show_name][$class_name] = 1;
-                        }
-                    }
-                }
 
-                // Upload any needed files
-                if(count($upload))
-                {
-
-                    try{
-                        Image::uploadThumbnails($upload);
-                    }
-                    catch(\ErrorException $e)
-                    {
-                        foreach($results as $s_name => $classes)
-                        {
-                            foreach($classes as $class_name => $count)
+                            if($processed_count >= $max_images)
                             {
-                                // Turn this into a dump into some sort of error_log that's created in the home directory and run through a proofgen:processerrorlog or something
-                                $error = 'upload '.$s_name.'/'.$class_name.PHP_EOL;
-                                Utility::addErrorLog($error);
+                                $this->info('');
+                                $this->comment('Maximum images reached. Processing will continue next run.');
+                                $this->info('');
+                                break 3;
                             }
+
                         }
-
-                        echo $e->getMessage().PHP_EOL;
-                        $this->info('Error caught, added to error log. Run "php artisan proofgen:errors to process them."');
                     }
-
                 }
             }
+        }
+
+        // Upload any needed files
+        if(count($upload))
+        {
+
+            try{
+                Image::uploadThumbnails($upload);
+            }
+            catch(\ErrorException $e)
+            {
+                foreach($results as $s_name => $classes)
+                {
+                    foreach($classes as $class_name => $count)
+                    {
+                        // Turn this into a dump into some sort of error_log that's created in the home directory and run through a proofgen:processerrorlog or something
+                        $error = 'upload '.$s_name.'/'.$class_name.PHP_EOL;
+                        Utility::addErrorLog($error);
+                    }
+                }
+
+                echo $e->getMessage().PHP_EOL;
+                $this->info('Error caught, added to error log. Run "php artisan proofgen:errors to process them."');
+            }
+
         }
 
         // Output results
