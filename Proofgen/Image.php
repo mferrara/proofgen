@@ -284,9 +284,16 @@ class Image {
         {
             $watermark_top = self::watermarkLargeProof('Proof# '.$image_filename.' - Proof# '.$image_filename, $image->width());
             $watermark_bot = self::watermarkLargeProof('Illegal to use - Ferrara Photography', $image->width());
-            $top_offset = round($image->height() * 0.2);
-            $bottom_offset = round($image->height() * 0.2);
-            $image->insert($watermark_top, 'top', 0, $top_offset)->insert($watermark_bot, 'bottom', 0, $bottom_offset)->save();
+
+            //$top_offset = round($image->height() * 0.2);
+            //$bottom_offset = round($image->height() * 0.2);
+            $bottom_offset = round($image->height() * 0.1);
+
+            $image
+                    //->insert($watermark_top, 'top', 0, $top_offset)
+                    ->insert($watermark_top, 'center')
+                    ->insert($watermark_bot, 'bottom', 0, $bottom_offset)
+                    ->save();
 
             $watermark_top = null;
             $watermark_bot = null;
