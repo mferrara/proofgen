@@ -45,6 +45,8 @@ class ProcessImages extends Command {
         $this->info('Processing up to '.$max_images.' images this run.');
         $this->info('');
 
+        $are_we_uploading = $this->confirm('Shall we upload these proofs? [yes/no]');
+
         unset($contents);
 
         $results = [];
@@ -127,26 +129,33 @@ class ProcessImages extends Command {
         // Upload any needed files
         if(count($upload))
         {
-
-            try{
-                Image::uploadThumbnails($upload);
-            }
-            catch(\ErrorException $e)
+            if($are_we_uploading)
             {
-                foreach($results as $s_name => $classes)
-                {
-                    foreach($classes as $class_name => $count)
-                    {
-                        // Turn this into a dump into some sort of error_log that's created in the home directory and run through a proofgen:processerrorlog or something
-                        $error = 'upload '.$s_name.'/'.$class_name.PHP_EOL;
-                        Utility::addErrorLog($error);
-                    }
+                try{
+                    Image::uploadThumbnails($upload);
                 }
+                catch(\ErrorException $e)
+                {
+                    foreach($results as $s_name => $classes)
+                    {
+                        foreach($classes as $class_name => $count)
+                        {
+                            // Turn this into a dump into some sort of error_log that's created in the home directory and run through a proofgen:processerrorlog or something
+                            $error = 'upload '.$s_name.'/'.$class_name.PHP_EOL;
+                            Utility::addErrorLog($error);
+                        }
+                    }
 
-                echo $e->getMessage().PHP_EOL;
-                $this->info('Error caught, added to error log. Run "php artisan proofgen:errors to process them."');
+                    echo $e->getMessage().PHP_EOL;
+                    $this->info('Error caught, added to error log. Run "php artisan proofgen:errors to process them."');
+                }
             }
-
+            else
+            {
+                $this->info('');
+                $this->info('Uploading skipped by user.');
+                $this->info('');
+            }
         }
 
         // Output results
@@ -167,8 +176,6 @@ class ProcessImages extends Command {
                     $this->info('-- '.$class_name.' - '.$count.' new images.');
                 }
             }
-
-
         }
         else
             $this->info('No new images found.');
