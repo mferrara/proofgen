@@ -85,6 +85,11 @@ class Utility {
             unset($temp_images);
         }
 
+        $flysystem = null;
+        $contents = null;
+        unset($flysystem);
+        unset($contents);
+
         return [
             'directories'   => $directories,
             'images'        => $images

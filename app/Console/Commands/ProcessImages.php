@@ -88,8 +88,10 @@ class ProcessImages extends Command {
                     //Utility::checkArchivePath($class_path);
 
                     // Pull all image files
-                    $images = Utility::getContentsOfPath($class_path);
-                    $images = $images['images'];
+                    $contents = Utility::getContentsOfPath($class_path);
+                    $images = $contents['images'];
+                    $contents = null;
+                    unset($contents);
 
                     // If there's images, run through them
                     // Rename them
@@ -99,10 +101,8 @@ class ProcessImages extends Command {
                     {
                         foreach($images as $image)
                         {
-                            $image_path = $class_path.'/'.$image['path'];
-
                             $this->info('Importing '.$image['path'].'...');
-                            $start = microtime(true);
+                            $start          = microtime(true);
                             $image_filename = Image::processNewImage($class_path, $image);
                             if($image_filename)
                             {
@@ -113,8 +113,8 @@ class ProcessImages extends Command {
                                     'class'=> $class_name
                                 ];
                             }
-                            $end = microtime(true);
-                            $total = number_format(($end - $start));
+                            $end            = microtime(true);
+                            $total          = number_format(($end - $start));
                             $processed_count++;
                             $this->comment('Completed '.' - '.$image['path'].' -> '.$image_filename.' in '.$total.' (s)'.' ('.$processed_count.'/'.$max_images.')');
 
@@ -123,6 +123,7 @@ class ProcessImages extends Command {
                             else
                                 $results[$show_name][$class_name] = 1;
 
+                            // Check to see if we've reached the $max_images configuration setting, if so break out of the loops.
                             if($processed_count >= $max_images)
                             {
                                 $this->info('');
@@ -131,6 +132,8 @@ class ProcessImages extends Command {
                                 break 3;
                             }
 
+                            $image_filename = null;
+                            unset($image_filename);
                         }
                     }
                 }

@@ -24,10 +24,8 @@ class Image {
 
             $flysystem = new Filesystem(new Adapter($full_class_path));
             $archive_fs = new Filesystem(new Adapter($archive_base_path));
+
             // Copy the file to originals path
-
-
-
             echo 'Copying image...';
             $flysystem->copy($image['path'], 'originals/'.$image['path']);
 
@@ -180,6 +178,13 @@ class Image {
                         $images[] = $image;
                     }
                 }
+
+                $image = null;
+                $class_contents = null;
+                $class_images = null;
+                unset($image);
+                unset($class_contents);
+                unset($class_images);
             }
         }
 
@@ -206,6 +211,9 @@ class Image {
 
         $proof_num = $highest_number+1;
         $proof_num = str_pad($proof_num, 5, '0', STR_PAD_LEFT);
+
+        $contents = null;
+        unset($contents);
 
         return strtoupper($show).'_'.$proof_num;
     }
