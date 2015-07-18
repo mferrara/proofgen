@@ -57,10 +57,12 @@ class Utility {
                         break;
 
                     if(
-                        $object['extension'] == 'JPG'
-                        || $object['extension'] == 'JPEG'
-                        || $object['extension'] == 'jpg'
-                        || $object['extension'] == 'jpeg'
+                        $object['extension'] === 'JPG'
+                        || $object['extension'] === 'JPEG'
+                        || $object['extension'] === 'jpg'
+                        || $object['extension'] === 'jpeg'
+                        //|| $object['extension'] === 'cr2'
+                        //|| $object['extension'] === 'CR2'
 
                     )
                         $images[] = $object;
