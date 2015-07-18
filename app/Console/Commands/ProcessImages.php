@@ -1,6 +1,7 @@
 <?php namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use League\Flysystem\Exception;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Adapter\Local as Adapter;
 use League\Flysystem\Sftp\SftpAdapter;
@@ -31,6 +32,16 @@ class ProcessImages extends Command {
      */
     public function fire()
     {
+
+        // Check that the archive drive is in place and accessible
+        try{
+            $archive_fs = new Filesystem(new Adapter(getenv('ARCHIVE_HOME_DIR')));
+            unset($archive_fs);
+        }
+        catch(Exception $e)
+        {
+            dd('Archive/Backup filesystem not accessible - Ending execution');
+        }
 
         $this->info('Starting...');
         $base_path  = getenv('FULLSIZE_HOME_DIR');
