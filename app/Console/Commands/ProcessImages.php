@@ -103,7 +103,7 @@ class ProcessImages extends Command {
                         {
                             $this->info('Importing '.$image['path'].'...');
                             $start          = microtime(true);
-                            $image_filename = Image::processNewImage($class_path, $image);
+                            $image_filename = Image::processNewImage($class_path, $image, $this);
                             if($image_filename)
                             {
                                 $upload[] = [

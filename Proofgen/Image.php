@@ -1,5 +1,6 @@
 <?php namespace Proofgen;
 
+use Illuminate\Console\Command;
 use Intervention\Image\ImageManager;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Adapter\Local as Adapter;
@@ -7,7 +8,7 @@ use League\Flysystem\Sftp\SftpAdapter;
 
 class Image {
 
-    public static function processNewImage($class_path, $image)
+    public static function processNewImage($class_path, $image, Command $terminal)
     {
         $home_dir           = getenv('FULLSIZE_HOME_DIR');
         $archive_base_path  = getenv('ARCHIVE_HOME_DIR');
@@ -20,28 +21,44 @@ class Image {
             $show = $uri[0];
             $class= $uri[1];
 
+            $start          = microtime(true);
             $proof_number = self::generateProofNumber($show);
+            $end            = microtime(true);
+            $total          = number_format(($end - $start));
+            $terminal->info($total.'s to determine the proof number.');
 
-            $flysystem = new Filesystem(new Adapter($full_class_path));
+            $flysystem  = new Filesystem(new Adapter($full_class_path));
             $archive_fs = new Filesystem(new Adapter($archive_base_path));
 
             // Copy the file to originals path
-            echo 'Copying image...';
+            $start          = microtime(true);
+            $terminal->info('Copying image...');
             $flysystem->copy($image['path'], 'originals/'.$image['path']);
 
             // Confirm the copy
             if($flysystem->has('originals/'.$image['path']))
             {
-                echo 'Copy Confirmed.'.PHP_EOL;
+                $end            = microtime(true);
+                $total          = number_format(($end - $start));
+                $terminal->info($total.'s to copy image and confirm.');
+
+                $terminal->info('Copy Confirmed.');
                 // Rename the copied file to the proof number
                 $proof_filename = $proof_number.'.'.strtolower($image['extension']);
-                echo 'Renaming copy to '.$proof_filename.PHP_EOL;
+                $terminal->info('Renaming copy to '.$proof_filename);
+
+                $start          = microtime(true);
                 $flysystem->rename('originals/'.$image['path'], 'originals/'.$proof_filename);
 
                 // Confirm the rename
                 if($flysystem->has('originals/'.$proof_filename))
                 {
-                    echo 'Rename confirmed, copying to archive'.PHP_EOL;
+                    $end            = microtime(true);
+                    $total          = number_format(($end - $start));
+                    $terminal->info($total.'s to rename image and confirm.');
+
+                    $start = microtime(true);
+                    $terminal->info('Rename confirmed, copying to archive');
                     $archive_file_path  = $class_path.'/'.$proof_filename;
                     $image_data         = file_get_contents($home_dir.'/'.$class_path.'/originals/'.$proof_filename);
 
@@ -56,32 +73,42 @@ class Image {
 
                     if($archive_fs->has($archive_file_path))
                     {
+                        $end            = microtime(true);
+                        $total          = number_format(($end - $start));
+                        $terminal->info($total.'s to check for existing image on archive, copy if not, and confirm.');
 
                         try{
 
-                            echo 'Memory used at start of thumbnails: '.self::convert(memory_get_usage(true)).PHP_EOL;
-                            echo 'Creating thumbnails...';
+                            $terminal->info('Memory used at start of thumbnails: '.self::convert(memory_get_usage(true)));
+                            $terminal->info('Creating thumbnails...');
                             // Create the thumbnails if they're not already there
+
+                            $start          = microtime(true);
+
                             self::checkImageForThumbnails($full_class_path, $proof_filename, $show, $class);
 
-                            echo 'Archived copy confirmed, thumbnails created, deleting original.'.PHP_EOL;
+                            $end            = microtime(true);
+                            $total          = number_format(($end - $start));
+                            $terminal->info($total.'s to check for thumbnails and create if not existing.');
+
+                            $terminal->info('Archived copy confirmed, thumbnails created, deleting original.');
                             // Delete the input file
                             $flysystem->delete($image['path']);
 
                         }
                         catch(ErrorException $e)
                         {
-                            echo 'Error creating thumbnails, resetting image.'.PHP_EOL;
+                            $terminal->info('Error creating thumbnails, resetting image.');
 
                             $temp_filename = 'temp'.rand(0,999999).'.jpg';
 
                             $flysystem->copy('originals/'.$proof_filename, $temp_filename);
 
-                            echo 'Confirming reset of image.'.PHP_EOL;
+                            $terminal->info('Confirming reset of image.');
                             if($flysystem->has($temp_filename))
                             {
                                 $flysystem->delete('originals/'.$proof_filename);
-                                echo 'Original moved back to processing folder, ready to try again.'.PHP_EOL;
+                                $terminal->info('Original moved back to processing folder, ready to try again.');
                             }
 
                             dd('Execution stopped due to error.');
