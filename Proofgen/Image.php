@@ -272,10 +272,8 @@ class Image {
         $watermark = self::watermarkSmallProof($image_filename);
         $image->insert($watermark, 'bottom-left', 10, 10)->save();
 
-        $watermark = null;
-        $image = null;
-        unset($watermark);
-        unset($image);
+        imagedestroy($watermark);
+        $image->destroy();
 
         // Save large thumbnail
         $image = $manager->make($full_size_image_path)->orientate();
@@ -284,8 +282,7 @@ class Image {
             $constraint->upsize();
         })->save($proofs_dest_path.'/'.$large_thumb_filename, getenv('LARGE_THUMBNAIL_QUALITY'));
 
-        $image = null;
-        unset($image);
+        $image->destroy();
 
         // Add watermark
         $image = $manager->make($proofs_dest_path.'/'.$large_thumb_filename);
@@ -296,8 +293,7 @@ class Image {
             $watermark = self::watermarkLargeProof($text, $image->width());
             $image->insert($watermark, 'center')->save();
 
-            $watermark = null;
-            unset($watermark);
+            imagedestroy($watermark);
         }
         else
         {
@@ -314,18 +310,15 @@ class Image {
                     ->insert($watermark_bot, 'bottom', 0, $bottom_offset)
                     ->save();
 
-            $watermark_top = null;
-            $watermark_bot = null;
-            unset($watermark_top);
-            unset($watermark_bot);
+            imagedestroy($watermark_top);
+            imagedestroy($watermark_bot);
         }
 
         echo 'Thumbnails created.'.PHP_EOL;
 
         $manager = null;
-        $image = null;
         unset($manager);
-        unset($image);
+        $image->destroy();
 
         echo 'Memory used at end of thumbnails:   '.self::convert(memory_get_usage(true)).PHP_EOL;
 
@@ -351,14 +344,14 @@ class Image {
         $total_upload_time = 0;
         foreach($upload as $up)
         {
-            $start_time = microtime(true);
-            $show_name = $up['show'];
-            $class_name = $up['class'];
-            $proof_number = explode('.', $up['file']);
-            $proof_number = $proof_number[0];
+            $start_time     = microtime(true);
+            $show_name      = $up['show'];
+            $class_name     = $up['class'];
+            $proof_number   = explode('.', $up['file']);
+            $proof_number   = $proof_number[0];
 
             // Generate this photo's show/class path
-            $remote_path = $show_name.'/'.$class_name;
+            $remote_path    = $show_name.'/'.$class_name;
 
             $lrg_suf            = getenv('LARGE_THUMBNAIL_SUFFIX');
             $sml_suf            = getenv('SMALL_THUMBNAIL_SUFFIX');
