@@ -21,43 +21,30 @@ class Image {
             $show = $uri[0];
             $class= $uri[1];
 
-            $start          = microtime(true);
             $proof_number = self::generateProofNumber($show);
-            $end            = microtime(true);
-            $total          = number_format(($end - $start));
-            $terminal->info($total.'s to determine the proof number.');
 
             $flysystem  = new Filesystem(new Adapter($full_class_path));
             $archive_fs = new Filesystem(new Adapter($archive_base_path));
 
             // Copy the file to originals path
-            $start          = microtime(true);
             $terminal->info('Copying image...');
             $flysystem->copy($image['path'], 'originals/'.$image['path']);
 
             // Confirm the copy
             if($flysystem->has('originals/'.$image['path']))
             {
-                $end            = microtime(true);
-                $total          = number_format(($end - $start));
-                $terminal->info($total.'s to copy image and confirm.');
 
                 $terminal->info('Copy Confirmed.');
                 // Rename the copied file to the proof number
                 $proof_filename = $proof_number.'.'.strtolower($image['extension']);
                 $terminal->info('Renaming copy to '.$proof_filename);
 
-                $start          = microtime(true);
                 $flysystem->rename('originals/'.$image['path'], 'originals/'.$proof_filename);
 
                 // Confirm the rename
                 if($flysystem->has('originals/'.$proof_filename))
                 {
-                    $end            = microtime(true);
-                    $total          = number_format(($end - $start));
-                    $terminal->info($total.'s to rename image and confirm.');
 
-                    $start = microtime(true);
                     $terminal->info('Rename confirmed, copying to archive');
                     $archive_file_path  = $class_path.'/'.$proof_filename;
                     $image_data         = file_get_contents($home_dir.'/'.$class_path.'/originals/'.$proof_filename);
@@ -73,9 +60,6 @@ class Image {
 
                     if($archive_fs->has($archive_file_path))
                     {
-                        $end            = microtime(true);
-                        $total          = number_format(($end - $start));
-                        $terminal->info($total.'s to check for existing image on archive, copy if not, and confirm.');
 
                         try{
 
