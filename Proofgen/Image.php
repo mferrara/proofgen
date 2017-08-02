@@ -1,10 +1,12 @@
 <?php namespace Proofgen;
 
+use App\Jobs\UploadProofs;
 use Illuminate\Console\Command;
 use Intervention\Image\ImageManager;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Adapter\Local as Adapter;
 use League\Flysystem\Sftp\SftpAdapter;
+use Illuminate\Support\Facades\Queue as Queue;
 
 class Image {
 
@@ -21,6 +23,7 @@ class Image {
             $show = $uri[0];
             $class= $uri[1];
 
+            // Generate a proof number
             $proof_number = self::generateProofNumber($show);
 
             $flysystem  = new Filesystem(new Adapter($full_class_path));
@@ -33,19 +36,29 @@ class Image {
             // Confirm the copy
             if($flysystem->has('originals/'.$image['path']))
             {
-
                 $terminal->info('Copy Confirmed.');
-                // Rename the copied file to the proof number
-                $proof_filename = $proof_number.'.'.strtolower($image['extension']);
-                $terminal->info('Renaming copy to '.$proof_filename);
 
-                $flysystem->rename('originals/'.$image['path'], 'originals/'.$proof_filename);
+                // Set proof filename to it's current name
+                $proof_filename = $image['path'];
+
+                // Check to see if we're going to rename
+                $rename_proofs = getenv('RENAME_PROOFS');
+
+                if($rename_proofs == 'true')
+                {
+                    // Rename the copied file to the proof number
+                    $proof_filename = $proof_number.'.'.strtolower($image['extension']);
+                    $terminal->info('Renaming copy to '.$proof_filename);
+
+                    $flysystem->rename('originals/'.$image['path'], 'originals/'.$proof_filename);
+                }
 
                 // Confirm the rename
                 if($flysystem->has('originals/'.$proof_filename))
                 {
+                    if($rename_proofs)
+                        $terminal->info('Rename confirmed, copying to archive');
 
-                    $terminal->info('Rename confirmed, copying to archive');
                     $archive_file_path  = $class_path.'/'.$proof_filename;
                     $image_data         = file_get_contents($home_dir.'/'.$class_path.'/originals/'.$proof_filename);
 
@@ -267,13 +280,17 @@ class Image {
             $constraint->upsize();
         })->save($proofs_dest_path.'/'.$small_thumb_filename, getenv('SMALL_THUMBNAIL_QUALITY'));
 
-        // Add watermark
-        $image     = $manager->make($proofs_dest_path.'/'.$small_thumb_filename);
-        $watermark = self::watermarkSmallProof($image_filename);
-        $image->insert($watermark, 'bottom-left', 10, 10)->save();
+        // If WATERMARK_PROOFS is true..
+        if(getenv('WATERMARK_PROOFS') == "true")
+        {
+            // Add watermark
+            $image     = $manager->make($proofs_dest_path.'/'.$small_thumb_filename);
+            $watermark = self::watermarkSmallProof($image_filename);
+            $image->insert($watermark, 'bottom-left', 10, 10)->save();
 
-        imagedestroy($watermark);
-        $image->destroy();
+            imagedestroy($watermark);
+            $image->destroy();
+        }
 
         // Save large thumbnail
         $image = $manager->make($full_size_image_path)->orientate();
@@ -284,52 +301,50 @@ class Image {
 
         $image->destroy();
 
-        // Add watermark
-        $image = $manager->make($proofs_dest_path.'/'.$large_thumb_filename);
-
-        if($image->width() > $image->height())
+        // If WATERMARK_PROOFS is true..
+        if(getenv('WATERMARK_PROOFS') == "true")
         {
-            $text = 'Proof# '.$image_filename.' - Illegal to use - Ferrara Photography';
-            $watermark = self::watermarkLargeProof($text, $image->width());
-            $image->insert($watermark, 'center')->save();
+            // Add watermark
+            $image = $manager->make($proofs_dest_path . '/' . $large_thumb_filename);
 
-            imagedestroy($watermark);
-        }
-        else
-        {
-            $watermark_top = self::watermarkLargeProof('Proof# '.$image_filename.' - Proof# '.$image_filename, $image->width());
-            $watermark_bot = self::watermarkLargeProof('Illegal to use - Ferrara Photography', $image->width());
+            if ($image->width() > $image->height()) {
+                $text = 'Proof# ' . $image_filename . ' - Illegal to use - Ferrara Photography';
+                $watermark = self::watermarkLargeProof($text, $image->width());
+                $image->insert($watermark, 'center')->save();
 
-            //$top_offset = round($image->height() * 0.2);
-            //$bottom_offset = round($image->height() * 0.2);
-            $bottom_offset = round($image->height() * 0.1);
+                imagedestroy($watermark);
+            } else {
+                $watermark_top = self::watermarkLargeProof('Proof# ' . $image_filename . ' - Proof# ' . $image_filename,
+                    $image->width());
+                $watermark_bot = self::watermarkLargeProof('Illegal to use - Ferrara Photography', $image->width());
 
-            $image
+                //$top_offset = round($image->height() * 0.2);
+                //$bottom_offset = round($image->height() * 0.2);
+                $bottom_offset = round($image->height() * 0.1);
+
+                $image
                     //->insert($watermark_top, 'top', 0, $top_offset)
                     ->insert($watermark_top, 'center')
                     ->insert($watermark_bot, 'bottom', 0, $bottom_offset)
                     ->save();
 
-            imagedestroy($watermark_top);
-            imagedestroy($watermark_bot);
+                imagedestroy($watermark_top);
+                imagedestroy($watermark_bot);
+            }
         }
 
         echo 'Thumbnails created.'.PHP_EOL;
 
         $manager = null;
         unset($manager);
-        $image->destroy();
 
         echo 'Memory used at end of thumbnails:   '.self::convert(memory_get_usage(true)).PHP_EOL;
 
         return $image_filename;
     }
 
-    public static function uploadThumbnails($upload)
+    public static function uploadThumbnail($up)
     {
-        $count = count($upload);
-        echo 'Uploading '.$count.' thumbnails...'.PHP_EOL;
-
         // Connect to the remote server
         $remote_fs = new Filesystem(new SftpAdapter([
             'host'      => getenv('SFTP_HOSTNAME'),
@@ -340,48 +355,55 @@ class Image {
             'timeout'   => 10,
         ]));
 
+        $show_name      = $up['show'];
+        $class_name     = $up['class'];
+        $proof_number   = explode('.', $up['file']);
+        $proof_number   = $proof_number[0];
+
+        // Generate this photo's show/class path
+        $remote_path    = $show_name.'/'.$class_name;
+
+        $lrg_suf            = getenv('LARGE_THUMBNAIL_SUFFIX');
+        $sml_suf            = getenv('SMALL_THUMBNAIL_SUFFIX');
+        $image_filename     = $proof_number;
+        $large_thumb_filename = $image_filename.$lrg_suf.'.jpg';
+        $small_thumb_filename = $image_filename.$sml_suf.'.jpg';
+        $proofs_dest_path   = getenv('FULLSIZE_HOME_DIR').'/'.$show_name.'/'.$class_name.'/proofs';
+
+        $small_thumbnail    = file_get_contents($proofs_dest_path.'/'.$small_thumb_filename);
+        $large_thumbnail    = file_get_contents($proofs_dest_path.'/'.$large_thumb_filename);
+
+        // Copy the files from local to remote
+        $remote_fs->put($remote_path.'/'.$small_thumb_filename, $small_thumbnail);
+        $remote_fs->put($remote_path.'/'.$large_thumb_filename, $large_thumbnail);
+
+        $small_thumbnail = null;
+        unset($small_thumbnail);
+        $large_thumbnail = null;
+        unset($large_thumbnail);
+
+    }
+
+    public static function uploadThumbnails($upload)
+    {
+        $count = count($upload);
+        echo 'Uploading '.$count.' thumbnails...'.PHP_EOL;
+
         $processed = 0;
         $total_upload_time = 0;
         foreach($upload as $up)
         {
-            $start_time     = microtime(true);
-            $show_name      = $up['show'];
-            $class_name     = $up['class'];
-            $proof_number   = explode('.', $up['file']);
-            $proof_number   = $proof_number[0];
+            $start_time         = microtime(true);
 
-            // Generate this photo's show/class path
-            $remote_path    = $show_name.'/'.$class_name;
+            self::uploadThumbnail($up);
 
-            $lrg_suf            = getenv('LARGE_THUMBNAIL_SUFFIX');
-            $sml_suf            = getenv('SMALL_THUMBNAIL_SUFFIX');
-            $image_filename     = $proof_number;
-            $large_thumb_filename = $image_filename.$lrg_suf.'.jpg';
-            $small_thumb_filename = $image_filename.$sml_suf.'.jpg';
-            $proofs_dest_path   = getenv('FULLSIZE_HOME_DIR').'/'.$show_name.'/'.$class_name.'/proofs';
-
-            $small_thumbnail    = file_get_contents($proofs_dest_path.'/'.$small_thumb_filename);
-            $large_thumbnail    = file_get_contents($proofs_dest_path.'/'.$large_thumb_filename);
-
-            // Copy the files from local to remote
-            $remote_fs->put($remote_path.'/'.$small_thumb_filename, $small_thumbnail);
-            $remote_fs->put($remote_path.'/'.$large_thumb_filename, $large_thumbnail);
-
-            $small_thumbnail = null;
-            unset($small_thumbnail);
-            $large_thumbnail = null;
-            unset($large_thumbnail);
-
-            $end_time = microtime(true);
-            $upload_time = number_format(($end_time - $start_time));
-            $total_upload_time = $total_upload_time + $upload_time;
+            $end_time           = microtime(true);
+            $upload_time        = number_format(($end_time - $start_time));
+            $total_upload_time  = $total_upload_time + $upload_time;
             $processed++;
-
-            echo $proof_number.' uploaded in '.$upload_time.' (s) ('.$processed.'/'.$count.')'.PHP_EOL;
-
         }
 
-        echo $count.' Thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
+        echo $processed.' out of '.$count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
     }
 
     public static function convert($size)
