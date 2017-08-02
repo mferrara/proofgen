@@ -67,7 +67,7 @@ class RegenerateProofs extends Command {
 
         $this->info('');
         $this->info('Enter class folder... (Optional)');
-        $this->info('Leave blank to regenerate all proofs for this show.');
+        $this->info('Enter all to regenerate all proofs for this show.');
         $this->info('Enter "list" to see all available classes.');
 
         $class = $this->ask('Class:');
@@ -91,7 +91,7 @@ class RegenerateProofs extends Command {
             $class = $this->ask('Class:');
         }
 
-        if($class !== null)
+        if($class !== 'all')
         {
             if( ! in_array($class, $all_classes))
                 exit('Class folder not found.'.PHP_EOL);
@@ -107,18 +107,18 @@ class RegenerateProofs extends Command {
         $this->info('----------------');
         $this->info('You have chosen to regenerate proofs for');
         $this->info('Show: '.$show);
-        if($class !== null)
+        if($class !== 'all')
             $this->info('Class: '.$class);
         else
             $this->info('Class: None chosen, all images from this show will be regenerated and re-uploaded.');
 
-        if($this->confirm('Do you want to proceed? [yes|no]'))
+        if($this->confirm('Do you want to proceed?'))
         {
             $this->info('Starting thumbnail regeneration...');
 
             $classes_to_run = [];
             // A specific class was selected, run it.
-            if($class !== null)
+            if($class !== 'all')
             {
                 $classes_to_run[] = $class;
             }
