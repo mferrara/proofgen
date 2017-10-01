@@ -6,7 +6,7 @@ use Intervention\Image\ImageManager;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Adapter\Local as Adapter;
 use League\Flysystem\Sftp\SftpAdapter;
-use Illuminate\Support\Facades\Queue as Queue;
+use Symfony\Component\Debug\Exception\FatalErrorException;
 
 class Image {
 
@@ -30,25 +30,29 @@ class Image {
             $archive_fs = new Filesystem(new Adapter($archive_base_path));
 
             // Copy the file to originals path
-            $terminal->info('Copying image...');
+            //$terminal->info('Copying image...');
             $flysystem->copy($image['path'], 'originals/'.$image['path']);
 
             // Confirm the copy
             if($flysystem->has('originals/'.$image['path']))
             {
-                $terminal->info('Copy Confirmed.');
+                //$terminal->info('Copy Confirmed.');
 
                 // Set proof filename to it's current name
                 $proof_filename = $image['path'];
 
                 // Check to see if we're going to rename
                 $rename_proofs = getenv('RENAME_PROOFS');
+                if(strtoupper($rename_proofs) == 'FALSE')
+                    $rename_proofs = false;
+                else
+                    $rename_proofs = true;
 
-                if($rename_proofs == 'true')
+                if($rename_proofs)
                 {
                     // Rename the copied file to the proof number
                     $proof_filename = $proof_number.'.'.strtolower($image['extension']);
-                    $terminal->info('Renaming copy to '.$proof_filename);
+                    //$terminal->info('Renaming copy to '.$proof_filename);
 
                     $flysystem->rename('originals/'.$image['path'], 'originals/'.$proof_filename);
                 }
@@ -57,7 +61,7 @@ class Image {
                 if($flysystem->has('originals/'.$proof_filename))
                 {
                     if($rename_proofs)
-                        $terminal->info('Rename confirmed, copying to archive');
+                        //$terminal->info('Rename confirmed, copying to archive');
 
                     $archive_file_path  = $class_path.'/'.$proof_filename;
                     $image_data         = file_get_contents($home_dir.'/'.$class_path.'/originals/'.$proof_filename);
@@ -76,8 +80,8 @@ class Image {
 
                         try{
 
-                            $terminal->info('Memory used at start of thumbnails: '.self::convert(memory_get_usage(true)));
-                            $terminal->info('Creating thumbnails...');
+                            //$terminal->info('Memory used at start of thumbnails: '.self::convert(memory_get_usage(true)));
+                            //$terminal->info('Creating thumbnails...');
                             // Create the thumbnails if they're not already there
 
                             $start          = microtime(true);
@@ -86,14 +90,14 @@ class Image {
 
                             $end            = microtime(true);
                             $total          = number_format(($end - $start));
-                            $terminal->info($total.'s to check for thumbnails and create if not existing.');
+                            //$terminal->info($total.'s to check for thumbnails and create if not existing.');
 
-                            $terminal->info('Archived copy confirmed, thumbnails created, deleting original.');
+                            //$terminal->info('Archived copy confirmed, thumbnails created, deleting original.');
                             // Delete the input file
                             $flysystem->delete($image['path']);
 
                         }
-                        catch(ErrorException $e)
+                        catch(FatalErrorException $e)
                         {
                             $terminal->info('Error creating thumbnails, resetting image.');
 
@@ -273,6 +277,11 @@ class Image {
         $image_filename     = $image->filename;
         $large_thumb_filename = $image_filename.$lrg_suf.'.jpg';
         $small_thumb_filename = $image_filename.$sml_suf.'.jpg';
+        $do_we_watermark    = strtoupper(getenv('WATERMARK_PROOFS'));
+        if($do_we_watermark == 'FALSE')
+            $do_we_watermark = false;
+        else
+            $do_we_watermark = true;
 
         // Save small thumbnail
         $image->resize(getenv('SMALL_THUMBNAIL_WIDTH'), getenv('SMALL_THUMBNAIL_HEIGHT'), function ($constraint) {
@@ -281,7 +290,7 @@ class Image {
         })->save($proofs_dest_path.'/'.$small_thumb_filename, getenv('SMALL_THUMBNAIL_QUALITY'));
 
         // If WATERMARK_PROOFS is true..
-        if(getenv('WATERMARK_PROOFS') == "true")
+        if($do_we_watermark)
         {
             // Add watermark
             $image     = $manager->make($proofs_dest_path.'/'.$small_thumb_filename);
@@ -302,7 +311,7 @@ class Image {
         $image->destroy();
 
         // If WATERMARK_PROOFS is true..
-        if(getenv('WATERMARK_PROOFS') == "true")
+        if($do_we_watermark)
         {
             // Add watermark
             $image = $manager->make($proofs_dest_path . '/' . $large_thumb_filename);
@@ -400,7 +409,10 @@ class Image {
             $end_time           = microtime(true);
             $upload_time        = number_format(($end_time - $start_time));
             $total_upload_time  = $total_upload_time + $upload_time;
+
             $processed++;
+
+            echo '('.$processed.'/'.count($upload).') - '.$up['file'].' uploaded in '.$upload_time.'s '.PHP_EOL;
         }
 
         echo $processed.' out of '.$count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
@@ -438,7 +450,7 @@ function imagettfJustifytext($text, $font="CENTURY.TTF", $justify=2, $W=0, $H=0,
 
     $angle = 0;
     $L_R_C = $justify;
-    $_bx = imageTTFBbox($fsize,0,$font,$text);
+    $_bx = \imageTTFBbox($fsize,0,$font,$text);
 
     $W = ($W==0)?abs($_bx[2]-$_bx[0]):$W;    //If Height not initialized by programmer then it will detect and assign perfect height.
     $H = ($H==0)?abs($_bx[5]-$_bx[3]):$H;    //If Width not initialized by programmer then it will detect and assign perfect width.
@@ -460,7 +472,7 @@ function imagettfJustifytext($text, $font="CENTURY.TTF", $justify=2, $W=0, $H=0,
 
         foreach($s as $key=>$val){
 
-            $_b = imageTTFBbox($fsize,0,$font,$val);
+            $_b = \imageTTFBbox($fsize,0,$font,$val);
             $_W = abs($_b[2]-$_b[0]);
             //Defining the X coordinate.
             $_X = $W-$_W;
@@ -480,7 +492,7 @@ function imagettfJustifytext($text, $font="CENTURY.TTF", $justify=2, $W=0, $H=0,
 
         foreach($s as $key=>$val){
 
-            $_b = imageTTFBbox($fsize,0,$font,$val);
+            $_b = \imageTTFBbox($fsize,0,$font,$val);
             $_W = abs($_b[2]-$_b[0]);
             //Defining the X coordinate.
             $_X = abs($W/2)-abs($_W/2);

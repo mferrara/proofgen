@@ -2,16 +2,10 @@
 
 namespace App\Jobs;
 
-use App\Jobs\Job;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Bus\SelfHandling;
 use Illuminate\Contracts\Queue\ShouldQueue;
-
-use League\Flysystem\Filesystem;
-use League\Flysystem\Sftp\SftpAdapter;
-
 use Proofgen\Image;
-use Proofgen\Utility;
 
 class UploadProofs extends Job implements SelfHandling, ShouldQueue
 {

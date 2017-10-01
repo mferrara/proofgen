@@ -85,6 +85,7 @@ class ProcessImages extends Command {
                     // Check for /originals directory
                     Utility::checkDirectoryForProofsPath($class_path);
                     Utility::checkDirectoryForOriginalsPath($class_path);
+                    // TODO: Fix this - it's using the full path but we just want to use the relative path
                     //Utility::checkArchivePath($class_path);
 
                     // Pull all image files
@@ -101,7 +102,7 @@ class ProcessImages extends Command {
                     {
                         foreach($images as $image)
                         {
-                            $this->info('Importing '.$image['path'].'...');
+                            //$this->info('Importing '.$image['path'].'...');
                             $start          = microtime(true);
                             $image_filename = Image::processNewImage($class_path, $image, $this);
                             if($image_filename)
