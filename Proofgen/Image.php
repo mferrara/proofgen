@@ -342,12 +342,12 @@ class Image {
             }
         }
 
-        echo 'Thumbnails created.'.PHP_EOL;
+        //echo 'Thumbnails created.'.PHP_EOL;
 
         $manager = null;
         unset($manager);
 
-        echo 'Memory used at end of thumbnails:   '.self::convert(memory_get_usage(true)).PHP_EOL;
+        echo 'Current memory usage:   '.self::convert(memory_get_usage(true)).PHP_EOL;
 
         return $image_filename;
     }
