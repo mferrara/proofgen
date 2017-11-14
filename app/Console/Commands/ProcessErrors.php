@@ -32,6 +32,7 @@ class ProcessErrors extends Command {
      */
     public function fire()
     {
+        ini_set('memory_limit', getenv('PHP_MEMORY_LIMIT'));
 
         $base_path  = getenv('FULLSIZE_HOME_DIR');
 

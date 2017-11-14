@@ -32,6 +32,7 @@ class ProcessImages extends Command {
      */
     public function fire()
     {
+        ini_set('memory_limit', getenv('PHP_MEMORY_LIMIT'));
 
         // Check that the archive drive is in place and accessible
         try{
