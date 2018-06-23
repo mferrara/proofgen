@@ -68,7 +68,7 @@ class RegenerateProofs extends Command {
             exit('Show folder not found.'.PHP_EOL);
 
         $this->info('');
-        $this->info('Enter class folder... (Optional)');
+        $this->info('Enter class folder or folders seperated by commas (example: 123, or: 123,124,125)... (Optional)');
         $this->info('Enter all to regenerate all proofs for this show.');
         $this->info('Enter "list" to see all available classes.');
 
@@ -93,8 +93,19 @@ class RegenerateProofs extends Command {
             $class = $this->ask('Class:');
         }
 
+        // Confirm that the class(s) exist
         if($class !== 'all')
         {
+            if(mb_stristr($class, ','))
+            {
+                $classes = explode(',', $class);
+                foreach($classes as $class_check)
+                {
+                    if( ! in_array($class, $all_classes))
+                        exit('Class folder not found.'.PHP_EOL);
+                }
+            }
+
             if( ! in_array($class, $all_classes))
                 exit('Class folder not found.'.PHP_EOL);
         }
@@ -122,7 +133,10 @@ class RegenerateProofs extends Command {
             // A specific class was selected, run it.
             if($class !== 'all')
             {
-                $classes_to_run[] = $class;
+                if(mb_stristr($class, ','))
+                    $classes_to_run = explode(',', $class);
+                else
+                    $classes_to_run[] = $class;
             }
             else
             {
