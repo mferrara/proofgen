@@ -44,6 +44,13 @@ class ProcessImages extends Command {
             dd('Archive/Backup filesystem not accessible - Ending execution');
         }
 
+        // Check the error log to see if there's stuff in there that needs to process..
+        $errors = Utility::parseErrorLog();
+        if(count($errors))
+        {
+            $this->error('Yo, there\'s stuff in the error log you may want to process..');
+        }
+
         $this->info('Starting...');
         $base_path  = getenv('FULLSIZE_HOME_DIR');
         $this->info('Checking '.$base_path.' for new images.. ');
