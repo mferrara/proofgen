@@ -1,5 +1,11 @@
 # Proof management for ferraraphoto.com
 
+## PHP Extensions required
+
+fileinfo
+exif
+gd
+
 ## Process new images found:
 
 Processes all new images found in the base show/class directories. The images will be renamed, thumbnailed, watermarked and uploaded.
