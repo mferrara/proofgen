@@ -125,7 +125,7 @@ class ProcessImages extends Command {
                             $end            = microtime(true);
                             $total          = number_format(($end - $start));
                             $processed_count++;
-                            $this->comment('Completed '.' - '.$image['path'].' -> '.$image_filename.' in '.$total.' (s)'.' ('.$processed_count.'/'.$max_images.')');
+                            $this->comment('Completed'.' - '.$class_name.'/'.$image['path'].' -> '.$class_name.'/'.$image_filename.' in '.$total.'s'.' ('.$processed_count.'/'.count($images).')');
 
                             if(isset($results[$show_name][$class_name]))
                                 $results[$show_name][$class_name]++;
