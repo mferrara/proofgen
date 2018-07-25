@@ -183,7 +183,7 @@ class RegenerateProofs extends Command {
             {
 
                 try{
-                    Image::uploadThumbnails($upload);
+                    Image::uploadThumbnailsPooled($upload);
                 }
                 catch(\ErrorException $e)
                 {
