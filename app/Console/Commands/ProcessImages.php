@@ -155,7 +155,7 @@ class ProcessImages extends Command {
             if($are_we_uploading)
             {
                 try{
-                    Image::uploadThumbnails($upload);
+                    Image::uploadThumbnailsPooled($upload);
                 }
                 catch(\ErrorException $e)
                 {

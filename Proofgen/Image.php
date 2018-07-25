@@ -6,6 +6,9 @@ use Intervention\Image\ImageManager;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Adapter\Local as Adapter;
 use League\Flysystem\Sftp\SftpAdapter;
+use Proofgen\PooledJobs\AutoloadedWorker;
+use Proofgen\PooledJobs\UploadProof;
+use Proofgen\PooledJobs\UploadProofWorker;
 use Symfony\Component\Debug\Exception\FatalErrorException;
 
 class Image {
@@ -390,7 +393,27 @@ class Image {
         unset($small_thumbnail);
         $large_thumbnail = null;
         unset($large_thumbnail);
+    }
 
+    public static function uploadThumbnailsPooled($upload)
+    {
+        $count          = count($upload);
+        $worker_count   = 8;
+        echo 'Uploading '.$count.' thumbnails with '.$worker_count.' concurrent connections...'.PHP_EOL;
+
+        $start_time     = microtime(true);
+        $pool           = new \Pool($worker_count, AutoloadedWorker::class);
+        foreach ($upload as $up) {
+            $pool->submit(new UploadProof($up));
+        }
+
+        while ($pool->collect());
+
+        $pool->shutdown();
+        $end_time       = microtime(true);
+        $total_upload_time = $end_time - $start_time;
+
+        echo $count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
     }
 
     public static function uploadThumbnails($upload)
