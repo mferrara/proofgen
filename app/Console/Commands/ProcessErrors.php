@@ -1,11 +1,6 @@
 <?php namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use League\Flysystem\Filesystem;
-use League\Flysystem\Adapter\Local as Adapter;
-use League\Flysystem\Sftp\SftpAdapter;
-use Intervention\Image\ImageManager;
-use League\Flysystem\Util;
 use Proofgen\Utility;
 use Proofgen\Image;
 
@@ -82,8 +77,7 @@ class ProcessErrors extends Command {
                     catch(\ErrorException $e)
                     {
                         echo $e->getMessage();
-
-                        dd("Error processing error - ".$action.' - '.$data);
+                        throw $e;
                     }
                 }
             }

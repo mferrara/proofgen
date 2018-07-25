@@ -78,7 +78,8 @@ $app->singleton(
 |
 */
 
-// $app->register('App\Providers\AppServiceProvider');
+ $app->register(Bugsnag\BugsnagLaravel\BugsnagServiceProvider::class);
+ //$app->register('App\Providers\AppServiceProvider');
  $app->register('App\Providers\CommandServiceProvider');
 
 /*
