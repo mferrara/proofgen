@@ -3,3 +3,6 @@
 .env
 .idea/*
 ferrara_privatekey
+fullsize_images_backup/*
+fullsize_images/*
+fullsize_archive/*
