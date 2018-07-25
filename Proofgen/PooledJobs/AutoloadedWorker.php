@@ -9,7 +9,7 @@ class AutoloadedWorker extends \Worker
     public function run()
     {
         //Auto loading library for threads
-        require_once '/vagrant/vendor/autoload.php';
+        require_once getenv('VENDOR_FULL_PATH').'autoload.php';
     }
     public function start(int $options = NULL)
     {
