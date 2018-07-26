@@ -7,6 +7,7 @@ use League\Flysystem\Filesystem;
 use League\Flysystem\Adapter\Local as Adapter;
 use League\Flysystem\Sftp\SftpAdapter;
 use Proofgen\PooledJobs\AutoloadedWorker;
+use Proofgen\PooledJobs\GenerateThumbnails;
 use Proofgen\PooledJobs\UploadProof;
 use Proofgen\PooledJobs\UploadProofWorker;
 use Symfony\Component\Debug\Exception\FatalErrorException;
@@ -26,11 +27,11 @@ class Image {
             $show = $uri[0];
             $class= $uri[1];
 
-            // Generate a proof number
-            $proof_number = self::generateProofNumber($show);
-
             $flysystem  = new Filesystem(new Adapter($full_class_path));
             $archive_fs = new Filesystem(new Adapter($archive_base_path));
+
+            // Generate a proof number (before the copy so we're not seeing/including the new file)
+            $proof_number = self::generateProofNumber($show);
 
             // Copy the file to originals path
             //$terminal->info('Copying image...');
@@ -49,7 +50,9 @@ class Image {
                 if(strtoupper($rename_proofs) == 'FALSE')
                     $rename_proofs = false;
                 else
+                {
                     $rename_proofs = true;
+                }
 
                 if($rename_proofs)
                 {
@@ -64,7 +67,9 @@ class Image {
                 if($flysystem->has('originals/'.$proof_filename))
                 {
                     if($rename_proofs)
+                    {
                         //$terminal->info('Rename confirmed, copying to archive');
+                    }
 
                     $archive_file_path  = $class_path.'/'.$proof_filename;
                     $image_data         = file_get_contents($home_dir.'/'.$class_path.'/originals/'.$proof_filename);
@@ -78,47 +83,14 @@ class Image {
                     $image_data = null;
                     unset($image_data);
 
+                    // Confirm the backup file
                     if($archive_fs->has($archive_file_path))
                     {
+                        //$terminal->info('Archived copy confirmed, thumbnails created, deleting original.');
+                        // Delete the input file
+                        $flysystem->delete($image['path']);
 
-                        try{
-
-                            //$terminal->info('Memory used at start of thumbnails: '.self::convert(memory_get_usage(true)));
-                            //$terminal->info('Creating thumbnails...');
-                            // Create the thumbnails if they're not already there
-
-                            $start          = microtime(true);
-
-                            self::checkImageForThumbnails($full_class_path, $proof_filename, $show, $class);
-
-                            $end            = microtime(true);
-                            $total          = number_format(($end - $start));
-                            //$terminal->info($total.'s to check for thumbnails and create if not existing.');
-
-                            //$terminal->info('Archived copy confirmed, thumbnails created, deleting original.');
-                            // Delete the input file
-                            $flysystem->delete($image['path']);
-
-                        }
-                        catch(FatalErrorException $e)
-                        {
-                            $terminal->info('Error creating thumbnails, resetting image.');
-
-                            $temp_filename = 'temp'.rand(0,999999).'.jpg';
-
-                            $flysystem->copy('originals/'.$proof_filename, $temp_filename);
-
-                            $terminal->info('Confirming reset of image.');
-                            if($flysystem->has($temp_filename))
-                            {
-                                $flysystem->delete('originals/'.$proof_filename);
-                                $terminal->info('Original moved back to processing folder, ready to try again.');
-                            }
-
-                            dd('Execution stopped due to error.');
-                        }
-
-                        $flysystem = null;
+                        $flysystem  = null;
                         $archive_fs = null;
                         unset($flysystem);
                         unset($archive_fs);
@@ -149,7 +121,7 @@ class Image {
         return false;
     }
 
-    public static function checkImageForThumbnails($class_path, $proof_filename, $show, $class)
+    public static function checkImageForThumbnails($class_path, $proof_filename)
     {
         $lrg_suf            = getenv('LARGE_THUMBNAIL_SUFFIX');
         $sml_suf            = getenv('SMALL_THUMBNAIL_SUFFIX');
@@ -229,7 +201,6 @@ class Image {
                 $num = str_replace(strtoupper($show).'_', '', $num);
                 $image_numbers[] = $num;
             }
-
             rsort($image_numbers);
         }
 
@@ -246,7 +217,9 @@ class Image {
         $contents = null;
         unset($contents);
 
-        return strtoupper($show).'_'.$proof_num;
+        $proof_num = strtoupper($show).'_'.$proof_num;
+
+        return $proof_num;
     }
 
     public static function watermarkLargeProof($text, $width = 0)
@@ -350,8 +323,6 @@ class Image {
         $manager = null;
         unset($manager);
 
-        echo 'Current memory usage:   '.self::convert(memory_get_usage(true)).PHP_EOL;
-
         return $image_filename;
     }
 
@@ -393,6 +364,27 @@ class Image {
         unset($small_thumbnail);
         $large_thumbnail = null;
         unset($large_thumbnail);
+    }
+
+    public static function batchGenerateThumbnailsPooled($to_thumbnail)
+    {
+        $count          = count($to_thumbnail);
+        $worker_count   = 8;
+        echo 'Creating '.$count.' thumbnails with '.$worker_count.' concurrent generators...'.PHP_EOL;
+
+        $start_time     = microtime(true);
+        $pool           = new \Pool($worker_count, AutoloadedWorker::class);
+        foreach ($to_thumbnail as $thumbnail_data) {
+            $pool->submit(new GenerateThumbnails($thumbnail_data));
+        }
+
+        while ($pool->collect());
+
+        $pool->shutdown();
+        $end_time       = microtime(true);
+        $total_upload_time = $end_time - $start_time;
+
+        echo $count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
     }
 
     public static function uploadThumbnailsPooled($upload)
@@ -440,13 +432,6 @@ class Image {
 
         echo $processed.' out of '.$count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
     }
-
-    public static function convert($size)
-    {
-        $unit=array('b','kb','mb','gb','tb','pb');
-        return @round($size/pow(1024,($i=floor(log($size,1024)))),2).' '.$unit[$i];
-    }
-
 }
 
 /**

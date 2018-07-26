@@ -8,6 +8,7 @@ use League\Flysystem\Sftp\SftpAdapter;
 use Intervention\Image\ImageManager;
 use Proofgen\Utility;
 use Proofgen\Image;
+use Symfony\Component\Debug\Exception\FatalErrorException;
 
 class ProcessImages extends Command {
 
@@ -126,6 +127,11 @@ class ProcessImages extends Command {
                                     'show' => $show_name,
                                     'class'=> $class_name
                                 ];
+
+                                $to_thumbnail[] = [
+                                    'path' => $class_path,
+                                    'file' => $image_filename
+                                ];
                             }
                             $end            = microtime(true);
                             $total          = number_format(($end - $start));
@@ -152,6 +158,13 @@ class ProcessImages extends Command {
                     }
                 }
             }
+        }
+
+        // Create thumbnails
+        if(count($to_thumbnail))
+        {
+            $this->comment('Creating '.count($to_thumbnail).' thumbnails...');
+            Image::batchGenerateThumbnailsPooled($to_thumbnail);
         }
 
         // Upload any needed files
