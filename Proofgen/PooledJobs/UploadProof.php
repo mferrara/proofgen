@@ -23,7 +23,7 @@ class UploadProof extends \Threaded
 
         $elapsed_time = ($end - $start);
 
-        $message = $this->upload['file'].' Uploaded in '.round($elapsed_time, 2).'s';
+        $message = $this->upload['path'].'/'.$this->upload['file'].' Uploaded in '.round($elapsed_time, 2).'s';
 
         echo $message.PHP_EOL;
     }
