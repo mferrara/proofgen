@@ -64,7 +64,12 @@ class ProcessImages extends Command {
         $this->info('Processing up to '.$max_images.' images this run.');
         $this->info('');
 
-        $are_we_uploading = $this->confirm('Shall we upload these proofs? [yes/no]');
+        //$are_we_uploading = $this->confirm('Shall we upload these proofs? [yes/no]');
+        $are_we_uploading = getenv('UPLOAD_PROOFS');
+        if($are_we_uploading === 'TRUE')
+            $are_we_uploading = true;
+        else
+            $are_we_uploading = false;
 
         unset($contents);
 
