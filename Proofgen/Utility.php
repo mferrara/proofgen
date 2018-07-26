@@ -25,11 +25,12 @@ class Utility {
         $contents = self::getContentsOfPath($originals_path);
         $images = $contents['images'];
 
+        echo 'Regenerating '.count($images).' proofs...'.PHP_EOL;
         foreach($images as $image)
         {
             $filename = $image['path'];
-            echo 'Regenerating proofs for '.$filename.PHP_EOL;
             Image::checkImageForThumbnails($class_path,$filename,$show,$class);
+            echo $filename.' done'.PHP_EOL;
             unset($filename);
         }
         unset($images);

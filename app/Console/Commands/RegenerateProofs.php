@@ -176,12 +176,11 @@ class RegenerateProofs extends Command {
 
             $this->info('Thumbnail regeneration complete.');
             $this->info('');
-            $this->info('Starting upload...');
 
             // Upload any needed files
             if(count($upload))
             {
-
+                $this->info('Starting upload of '.count($upload).' thumbnails.');
                 try{
                     Image::uploadThumbnailsPooled($upload);
                 }
@@ -198,7 +197,10 @@ class RegenerateProofs extends Command {
                     echo $e->getMessage().PHP_EOL;
                     $this->info('Error caught, added to error log. Run "php artisan proofgen:errors to process them."');
                 }
-
+            }
+            else
+            {
+                $this->info('Nothing to upload.');
             }
         }
 
