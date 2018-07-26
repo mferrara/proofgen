@@ -384,7 +384,7 @@ class Image {
         $end_time       = microtime(true);
         $total_upload_time = $end_time - $start_time;
 
-        echo $count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
+        echo $count.' thumbnails generated in '.$total_upload_time.' seconds '.PHP_EOL;
     }
 
     public static function uploadThumbnailsPooled($upload)
