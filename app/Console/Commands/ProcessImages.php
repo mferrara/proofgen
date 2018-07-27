@@ -76,6 +76,7 @@ class ProcessImages extends Command {
 
         $results = [];
         $processed_count = 0;
+        $to_thumbnail = [];
         // Cycle through each show, checking for class folders and images within them
         foreach($shows as $directory)
         {
@@ -117,7 +118,7 @@ class ProcessImages extends Command {
                         // Get proof numbers here
                         // Generate a proof number (before the copy so we're not seeing/including the new file)
                         $proof_numbers = Image::generateProofNumbers($directory['path'], count($images));
-                        
+
                         foreach($images as $image)
                         {
                             //$this->info('Importing '.$image['path'].'...');
