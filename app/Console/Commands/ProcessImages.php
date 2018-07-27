@@ -103,9 +103,9 @@ class ProcessImages extends Command {
                     //Utility::checkArchivePath($class_path);
 
                     // Pull all image files
-                    $contents = Utility::getContentsOfPath($class_path);
-                    $images = $contents['images'];
-                    $contents = null;
+                    $contents   = Utility::getContentsOfPath($class_path);
+                    $images     = $contents['images'];
+                    $contents   = null;
                     unset($contents);
 
                     // If there's images, run through them
@@ -164,7 +164,8 @@ class ProcessImages extends Command {
         if(count($to_thumbnail))
         {
             $this->comment('Creating '.count($to_thumbnail).' thumbnails...');
-            Image::batchGenerateThumbnailsPooled($to_thumbnail);
+            //Image::batchGenerateThumbnailsPooled($to_thumbnail);
+            Image::batchGenerateThumbnails($to_thumbnail);
         }
 
         // Upload any needed files

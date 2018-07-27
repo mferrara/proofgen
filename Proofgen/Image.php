@@ -387,6 +387,44 @@ class Image {
         echo $count.' thumbnails generated in '.$total_upload_time.' seconds '.PHP_EOL;
     }
 
+    public static function batchGenerateThumbnails($to_thumbnail)
+    {
+        $count          = count($to_thumbnail);
+
+        foreach ($to_thumbnail as $key => $thumbnail_data)
+        {
+            $start  = microtime(true);
+
+            try{
+                Image::checkImageForThumbnails($thumbnail_data['path'], $thumbnail_data['file']);
+            }
+            catch(FatalErrorException $e)
+            {
+                echo 'Error creating thumbnails, resetting image.'.PHP_EOL;
+
+                $temp_filename = 'temp'.rand(0,999999).'.jpg';
+                $flysystem  = new Filesystem(new Adapter($thumbnail_data['path']));
+                $flysystem->copy('originals/'.$thumbnail_data['file'], $temp_filename);
+
+                echo 'Confirming reset of image.'.PHP_EOL;
+                if($flysystem->has($temp_filename))
+                {
+                    $flysystem->delete('originals/'.$thumbnail_data['file']);
+                    echo 'Original moved back to processing folder, ready to try again.'.PHP_EOL;
+                }
+
+                throw $e;
+            }
+
+            $end    = microtime(true);
+
+            $elapsed_time = ($end - $start);
+            $message = '('.($key + 1).'/'.$count.') '.$thumbnail_data['path'].'/'.$thumbnail_data['file'].' thumbnailed in '.round($elapsed_time, 2).'s'.' - Current memory usage:   '.self::convert(memory_get_usage(true)).' ';
+
+            echo $message.PHP_EOL;
+        }
+    }
+
     public static function uploadThumbnailsPooled($upload)
     {
         $count          = count($upload);
@@ -431,6 +469,12 @@ class Image {
         }
 
         echo $processed.' out of '.$count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
+    }
+
+    public static function convert($size)
+    {
+        $unit=array('b','kb','mb','gb','tb','pb');
+        return @round($size/pow(1024,($i=floor(log($size,1024)))),2).' '.$unit[$i];
     }
 }
 
