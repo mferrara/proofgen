@@ -14,7 +14,7 @@ use Symfony\Component\Debug\Exception\FatalErrorException;
 
 class Image {
 
-    public static function processNewImage($class_path, $image, Command $terminal)
+    public static function processNewImage($class_path, $image, $proof_number, Command $terminal)
     {
         $home_dir           = getenv('FULLSIZE_HOME_DIR');
         $archive_base_path  = getenv('ARCHIVE_HOME_DIR');
@@ -29,9 +29,6 @@ class Image {
 
             $flysystem  = new Filesystem(new Adapter($full_class_path));
             $archive_fs = new Filesystem(new Adapter($archive_base_path));
-
-            // Generate a proof number (before the copy so we're not seeing/including the new file)
-            $proof_number = self::generateProofNumber($show);
 
             // Copy the file to originals path
             //$terminal->info('Copying image...');
@@ -156,7 +153,7 @@ class Image {
         return $created;
     }
 
-    public static function generateProofNumber($show)
+    public static function generateProofNumbers($show, $count)
     {
         // Generate the path for this show
         $show_path = getenv('FULLSIZE_HOME_DIR').'/'.$show;
@@ -211,15 +208,27 @@ class Image {
         else
             $highest_number = 0;
 
-        $proof_num = $highest_number+1;
-        $proof_num = str_pad($proof_num, 5, '0', STR_PAD_LEFT);
+        if( ! ctype_digit($highest_number))
+        {
+            dd('Non-numeric proof number found, please remove the '.$highest_number.' file from the originals path.');
+        }
 
         $contents = null;
         unset($contents);
 
-        $proof_num = strtoupper($show).'_'.$proof_num;
+        // Generate an array of proof numbers to use
+        $return_count   = $count + 4; // +4 just so we have some extras
+        $proof_numbers  = [];
+        $proof_num = $highest_number+1;
+        while($return_count >= 0)
+        {
+            $proof_num = str_pad($proof_num, 5, '0', STR_PAD_LEFT);
+            $proof_numbers[] = strtoupper($show).'_'.$proof_num;
+            $proof_num++;
+            $return_count--;
+        }
 
-        return $proof_num;
+        return $proof_numbers;
     }
 
     public static function watermarkLargeProof($text, $width = 0)

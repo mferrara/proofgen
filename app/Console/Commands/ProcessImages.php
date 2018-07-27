@@ -114,11 +114,16 @@ class ProcessImages extends Command {
                     // Thumbnail them
                     if(count($images) > 0)
                     {
+                        // Get proof numbers here
+                        // Generate a proof number (before the copy so we're not seeing/including the new file)
+                        $proof_numbers = Image::generateProofNumbers($directory['path'], count($images));
+                        
                         foreach($images as $image)
                         {
                             //$this->info('Importing '.$image['path'].'...');
                             $start          = microtime(true);
-                            $image_filename = Image::processNewImage($class_path, $image, $this);
+                            $proof_number   = array_shift($proof_numbers);
+                            $image_filename = Image::processNewImage($class_path, $image, $proof_number, $this);
                             if($image_filename)
                             {
                                 $upload[] = [
