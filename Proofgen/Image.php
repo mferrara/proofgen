@@ -208,7 +208,7 @@ class Image {
         else
             $highest_number = 0;
 
-        if( ! ctype_digit($highest_number))
+        if($highest_number !== 0 && ! ctype_digit($highest_number))
         {
             dd('Non-numeric proof number found, please remove the '.$highest_number.' file from the originals path.');
         }
