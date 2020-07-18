@@ -15,7 +15,7 @@ class ReUpload extends Command {
      *
      * @var string
      */
-    protected $name = 'proofgen:reupload';
+    protected $name = 'proofgen:re-upload';
 
     /**
      * The console command description.
