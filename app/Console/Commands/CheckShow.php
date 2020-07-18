@@ -100,9 +100,21 @@ class CheckShow extends Command {
         foreach($local_array as $class_slug => $count_array)
         {
             $local_proof_count = $count_array['proofs'] / 2;
-            $remote_proof_count = $response_array->$class_slug;
+            if(isset($response_array->$class_slug))
+            {
+                $remote_proof_count = $response_array->$class_slug;
 
-            $this->info('Class '.$class_slug.' has '.$local_proof_count.' local proofs and '.$remote_proof_count.' website proofs.');
+                // Do the counts match?
+                if($local_proof_count !== $remote_proof_count)
+                {
+                    $this->info('Class '.$class_slug.' has '.$local_proof_count.' local proofs and '.$remote_proof_count.' website proofs.');
+                }
+            }
+            else
+            {
+                $this->info('Class '.$class_slug.' is not yet uploaded.');
+            }
+
         }
 
         $this->info('');
