@@ -15,7 +15,8 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\ProcessImages',
         'App\Console\Commands\RegenerateProofs',
         'App\Console\Commands\ProcessErrors',
-        'App\Console\Commands\CheckShow'
+        'App\Console\Commands\CheckShow',
+        'App\Console\Commands\ReUpload'
     ];
 
     /**
