@@ -88,9 +88,7 @@ class CheckShow extends Command {
         foreach($local_array as $class_slug => $count_array)
         {
             if(($count_array['originals'] * 2) !== $count_array['proofs'])
-                $this->info('Class '. $class_slug.' has '.$count_array['originals'].' and '.$count_array['proofs'].'. It should have '.($count_array['originals']*2).' proofs');
-            else
-                $this->info('Class '.$class_slug.' is good.');
+                $this->info('Class '. $class_slug.' has '.$count_array['originals'].' original images and '.$count_array['proofs'].' proofs. It should have '.($count_array['originals']*2).' proofs');
         }
 
         $this->info('');
