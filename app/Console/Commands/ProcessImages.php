@@ -101,7 +101,7 @@ class ProcessImages extends Command {
                     Utility::checkDirectoryForProofsPath($class_path);
                     Utility::checkDirectoryForOriginalsPath($class_path);
                     // TODO: Fix this - it's using the full path but we just want to use the relative path
-                    //Utility::checkArchivePath($class_path);
+                    Utility::checkArchivePath($class['path']);
 
                     // Pull all image files
                     $contents   = Utility::getContentsOfPath($class_path);
@@ -180,7 +180,8 @@ class ProcessImages extends Command {
             if($are_we_uploading)
             {
                 try{
-                    Image::uploadThumbnailsPooled($upload);
+                    //Image::uploadThumbnailsPooled($upload);
+                    Image::uploadThumbnails($upload);
                 }
                 catch(\ErrorException $e)
                 {
