@@ -441,9 +441,9 @@ class Image {
         echo 'Uploading '.$count.' thumbnails with '.$worker_count.' concurrent connections...'.PHP_EOL;
 
         $start_time     = microtime(true);
-        $pool           = new \Pool($worker_count, AutoloadedWorker::class);
+        //$pool           = new \Pool($worker_count, AutoloadedWorker::class);
         foreach ($upload as $up) {
-            $pool->submit(new UploadProof($up));
+            //$pool->submit(new UploadProof($up));
         }
 
         while ($pool->collect());
