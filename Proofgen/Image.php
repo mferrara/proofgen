@@ -1,6 +1,7 @@
 <?php namespace Proofgen;
 
 use App\Jobs\UploadProofs;
+use Exception;
 use Illuminate\Console\Command;
 use Intervention\Image\ImageManager;
 use League\Flysystem\Filesystem;
@@ -375,109 +376,114 @@ class Image {
         unset($large_thumbnail);
     }
 
-    public static function batchGenerateThumbnailsPooled($to_thumbnail)
-    {
-        $count          = count($to_thumbnail);
-        $worker_count   = 8;
-        echo 'Creating '.$count.' thumbnails with '.$worker_count.' concurrent generators...'.PHP_EOL;
-
-        $start_time     = microtime(true);
-        $pool           = new \Pool($worker_count, AutoloadedWorker::class);
-        foreach ($to_thumbnail as $thumbnail_data) {
-            $pool->submit(new GenerateThumbnails($thumbnail_data));
-        }
-
-        while ($pool->collect());
-
-        $pool->shutdown();
-        $end_time       = microtime(true);
-        $total_upload_time = $end_time - $start_time;
-
-        echo $count.' thumbnails generated in '.$total_upload_time.' seconds '.PHP_EOL;
-    }
-
     public static function batchGenerateThumbnails($to_thumbnail)
     {
-        $count          = count($to_thumbnail);
-
-        foreach ($to_thumbnail as $key => $thumbnail_data)
+        if(class_exists('\Pool') && 1 === 3)
         {
-            $start  = microtime(true);
+            $count          = count($to_thumbnail);
+            $worker_count   = 8;
+            echo 'Creating '.$count.' thumbnails with '.$worker_count.' concurrent generators...'.PHP_EOL;
 
-            try{
-                Image::checkImageForThumbnails($thumbnail_data['path'], $thumbnail_data['file']);
+            $start_time     = microtime(true);
+            $pool           = new \Pool($worker_count, AutoloadedWorker::class);
+            foreach ($to_thumbnail as $thumbnail_data) {
+                $pool->submit(new GenerateThumbnails($thumbnail_data));
             }
-            catch(FatalErrorException $e)
+
+            while ($pool->collect());
+
+            $pool->shutdown();
+            $end_time       = microtime(true);
+            $total_upload_time = $end_time - $start_time;
+
+            echo $count.' thumbnails generated in '.$total_upload_time.' seconds '.PHP_EOL;
+        }
+        else
+        {
+            $count          = count($to_thumbnail);
+
+            echo 'Creating '.$count.' thumbnails (not threaded) ...'.PHP_EOL;
+            foreach ($to_thumbnail as $key => $thumbnail_data)
             {
-                echo 'Error creating thumbnails, resetting image.'.PHP_EOL;
+                $start  = microtime(true);
 
-                $temp_filename = 'temp'.rand(0,999999).'.jpg';
-                $flysystem  = new Filesystem(new Adapter($thumbnail_data['path']));
-                $flysystem->copy('originals/'.$thumbnail_data['file'], $temp_filename);
-
-                echo 'Confirming reset of image.'.PHP_EOL;
-                if($flysystem->has($temp_filename))
+                try{
+                    Image::checkImageForThumbnails($thumbnail_data['path'], $thumbnail_data['file']);
+                }
+                catch(Exception $e)
                 {
-                    $flysystem->delete('originals/'.$thumbnail_data['file']);
-                    echo 'Original moved back to processing folder, ready to try again.'.PHP_EOL;
+                    echo 'Error creating thumbnails, resetting image.'.PHP_EOL;
+
+                    $temp_filename = 'temp'.rand(0,999999).'.jpg';
+                    $flysystem  = new Filesystem(new Adapter($thumbnail_data['path']));
+                    $flysystem->copy('originals/'.$thumbnail_data['file'], $temp_filename);
+
+                    echo 'Confirming reset of image.'.PHP_EOL;
+                    if($flysystem->has($temp_filename))
+                    {
+                        $flysystem->delete('originals/'.$thumbnail_data['file']);
+                        echo 'Original moved back to processing folder, ready to try again.'.PHP_EOL;
+                    }
+
+                    throw $e;
                 }
 
-                throw $e;
+                $end    = microtime(true);
+
+                $elapsed_time = ($end - $start);
+                $message = '('.($key + 1).'/'.$count.') '.$thumbnail_data['path'].'/'.$thumbnail_data['file'].' thumbnailed in '.round($elapsed_time, 2).'s'.' - Current memory usage:   '.self::convert(memory_get_usage(true)).' ';
+
+                echo $message.PHP_EOL;
             }
-
-            $end    = microtime(true);
-
-            $elapsed_time = ($end - $start);
-            $message = '('.($key + 1).'/'.$count.') '.$thumbnail_data['path'].'/'.$thumbnail_data['file'].' thumbnailed in '.round($elapsed_time, 2).'s'.' - Current memory usage:   '.self::convert(memory_get_usage(true)).' ';
-
-            echo $message.PHP_EOL;
         }
-    }
-
-    public static function uploadThumbnailsPooled($upload)
-    {
-        $count          = count($upload);
-        $worker_count   = 8;
-        echo 'Uploading '.$count.' thumbnails with '.$worker_count.' concurrent connections...'.PHP_EOL;
-
-        $start_time     = microtime(true);
-        $pool           = new \Pool($worker_count, AutoloadedWorker::class);
-        foreach ($upload as $up) {
-            $pool->submit(new UploadProof($up));
-        }
-
-        while ($pool->collect());
-
-        $pool->shutdown();
-        $end_time       = microtime(true);
-        $total_upload_time = $end_time - $start_time;
-
-        echo $count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
     }
 
     public static function uploadThumbnails($upload)
     {
-        $count = count($upload);
-        echo 'Uploading '.$count.' thumbnails...'.PHP_EOL;
-
-        $processed = 0;
-        $total_upload_time = 0;
-        foreach($upload as $up)
+        if(class_exists('Pool') && 1 === 3)
         {
-            $start_time         = microtime(true);
+            $count          = count($upload);
+            $worker_count   = 8;
+            echo 'Uploading '.$count.' thumbnails with '.$worker_count.' concurrent connections...'.PHP_EOL;
 
-            self::uploadThumbnail($up);
+            $start_time     = microtime(true);
+            $pool           = new \Pool($worker_count, AutoloadedWorker::class);
+            foreach ($upload as $up) {
+                $pool->submit(new UploadProof($up));
+            }
 
-            $end_time           = microtime(true);
-            $upload_time        = number_format(($end_time - $start_time));
-            $total_upload_time  = $total_upload_time + $upload_time;
+            while ($pool->collect());
 
-            $processed++;
+            $pool->shutdown();
+            $end_time       = microtime(true);
+            $total_upload_time = $end_time - $start_time;
 
-            echo '('.$processed.'/'.count($upload).') - '.$up['file'].' uploaded in '.$upload_time.'s '.PHP_EOL;
+            echo $count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
         }
+        else
+        {
+            $count = count($upload);
+            echo 'Uploading '.$count.' thumbnails...'.PHP_EOL;
 
-        echo $processed.' out of '.$count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
+            $processed = 0;
+            $total_upload_time = 0;
+            foreach($upload as $up)
+            {
+                $start_time         = microtime(true);
+
+                self::uploadThumbnail($up);
+
+                $end_time           = microtime(true);
+                $upload_time        = number_format(($end_time - $start_time));
+                $total_upload_time  = $total_upload_time + $upload_time;
+
+                $processed++;
+
+                echo '('.$processed.'/'.count($upload).') - '.$up['file'].' uploaded in '.$upload_time.'s '.PHP_EOL;
+            }
+
+            echo $processed.' out of '.$count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
+        }
     }
 
     public static function convert($size)

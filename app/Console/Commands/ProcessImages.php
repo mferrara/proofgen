@@ -170,8 +170,7 @@ class ProcessImages extends Command {
         if(count($to_thumbnail))
         {
             $this->comment('Creating '.count($to_thumbnail).' thumbnails...');
-            Image::batchGenerateThumbnailsPooled($to_thumbnail);
-            //Image::batchGenerateThumbnails($to_thumbnail);
+            Image::batchGenerateThumbnails($to_thumbnail);
         }
 
         // Upload any needed files
@@ -180,8 +179,7 @@ class ProcessImages extends Command {
             if($are_we_uploading)
             {
                 try{
-                    Image::uploadThumbnailsPooled($upload);
-                    //Image::uploadThumbnails($upload);
+                    Image::uploadThumbnails($upload);
                 }
                 catch(\ErrorException $e)
                 {

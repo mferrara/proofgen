@@ -4,6 +4,7 @@
 namespace Proofgen\PooledJobs;
 
 
+use Exception;
 use Proofgen\Image;
 use Symfony\Component\Debug\Exception\FatalErrorException;
 use League\Flysystem\Filesystem;
@@ -25,7 +26,7 @@ class GenerateThumbnails extends \Threaded
         try{
             Image::checkImageForThumbnails($this->thumbnail_data['path'], $this->thumbnail_data['file']);
         }
-        catch(FatalErrorException $e)
+        catch(Exception $e)
         {
             echo 'Error creating thumbnails, resetting image.'.PHP_EOL;
 

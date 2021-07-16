@@ -182,8 +182,7 @@ class RegenerateProofs extends Command {
             {
                 $this->info('Starting upload of '.count($upload).' thumbnails.');
                 try{
-                    Image::uploadThumbnailsPooled($upload);
-                    //Image::uploadThumbnails($upload);
+                    Image::uploadThumbnails($upload);
                 }
                 catch(\ErrorException $e)
                 {

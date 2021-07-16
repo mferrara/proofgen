@@ -41,7 +41,7 @@ class Utility {
         if(count($to_thumbnail))
         {
             echo 'Creating '.count($to_thumbnail).' thumbnails...'.PHP_EOL;
-            Image::batchGenerateThumbnailsPooled($to_thumbnail);
+            Image::batchGenerateThumbnails($to_thumbnail);
             echo 'Thumbnails done.'.PHP_EOL;
         }
 
