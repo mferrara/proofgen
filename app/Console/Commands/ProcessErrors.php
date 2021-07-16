@@ -66,8 +66,8 @@ class ProcessErrors extends Command {
                     }
 
                     try{
-                        //Image::uploadThumbnailsPooled($upload);
-                        Image::uploadThumbnails($upload);
+                        Image::uploadThumbnailsPooled($upload);
+                        //Image::uploadThumbnails($upload);
 
                         $this->info('Upload complete, updating error log.');
                         unset($errors[$key]);

@@ -162,8 +162,8 @@ class ReUpload extends Command {
             {
                 $this->info('Starting upload of '.count($upload).' thumbnails.');
                 try{
-                    //Image::uploadThumbnailsPooled($upload);
-                    Image::uploadThumbnails($upload);
+                    Image::uploadThumbnailsPooled($upload);
+                    //Image::uploadThumbnails($upload);
                 }
                 catch(\ErrorException $e)
                 {

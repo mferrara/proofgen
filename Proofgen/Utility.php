@@ -28,11 +28,23 @@ class Utility {
         echo 'Regenerating '.count($images).' proofs...'.PHP_EOL;
         foreach($images as $image)
         {
-            $filename = $image['path'];
-            Image::checkImageForThumbnails($class_path,$filename,$show,$class);
-            echo $filename.' done'.PHP_EOL;
-            unset($filename);
+            //$filename = $image['path'];
+            //Image::checkImageForThumbnails($class_path,$filename,$show,$class);
+            //echo $filename.' done'.PHP_EOL;
+            //unset($filename);
+            $to_thumbnail[] = [
+                'path' => $base_path.'/'.$show.'/'.$class,
+                'file' => $image['basename']
+            ];
         }
+
+        if(count($to_thumbnail))
+        {
+            echo 'Creating '.count($to_thumbnail).' thumbnails...'.PHP_EOL;
+            Image::batchGenerateThumbnailsPooled($to_thumbnail);
+            echo 'Thumbnails done.'.PHP_EOL;
+        }
+
         unset($images);
         unset($flysystem);
         unset($contents);
