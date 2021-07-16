@@ -440,7 +440,7 @@ class Image {
 
     public static function uploadThumbnails($upload)
     {
-        if(class_exists('Pool') && 1 === 3)
+        if(class_exists('Pool'))
         {
             $count          = count($upload);
             $worker_count   = 8;
