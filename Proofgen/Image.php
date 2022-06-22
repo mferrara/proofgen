@@ -378,7 +378,7 @@ class Image {
 
     public static function batchGenerateThumbnails($to_thumbnail)
     {
-        if(class_exists('\Pool') && getenv('POOLED_THUMBNAIL_GENERATION') === TRUE)
+        if(class_exists('\Pool') && getenv('POOLED_THUMBNAIL_GENERATION') === 'TRUE')
         {
             $count          = count($to_thumbnail);
             $worker_count   = getenv('PHP_POOL_THREAD_COUNT');
