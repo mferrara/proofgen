@@ -24,6 +24,8 @@ class GenerateThumbnails extends \Threaded
     {
         $start  = microtime(true);
 
+        echo '[DEBUG] Configured memory limit... '.ini_get('memory_limit').'[/DEBUG]'.PHP_EOL;
+
         try{
             Image::checkImageForThumbnails($this->thumbnail_data['path'], $this->thumbnail_data['file']);
         }
