@@ -6,7 +6,6 @@ namespace Proofgen\PooledJobs;
 
 use Exception;
 use Proofgen\Image;
-use Symfony\Component\Debug\Exception\FatalErrorException;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Adapter\Local as Adapter;
 
@@ -16,6 +15,8 @@ class GenerateThumbnails extends \Threaded
 
     public function __construct($thumbnail_data)
     {
+        ini_set('memory_limit', getenv('PHP_MEMORY_LIMIT'));
+
         $this->thumbnail_data = $thumbnail_data;
     }
 
