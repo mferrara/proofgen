@@ -378,7 +378,7 @@ class Image {
 
     public static function batchGenerateThumbnails($to_thumbnail)
     {
-        if(class_exists('\Pool') && 1 === 3)
+        if(class_exists('\Pool'))
         {
             $count          = count($to_thumbnail);
             $worker_count   = 8;
