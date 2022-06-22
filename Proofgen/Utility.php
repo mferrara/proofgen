@@ -13,6 +13,7 @@ class Utility {
 
         $originals_path = $class_path.'/originals';
         $proofs_path    = $class_path.'/proofs';
+        $to_thumbnail   = [];
 
         // Remove existing proofs
         $flysystem      = new Filesystem(new Adapter($class_path));
