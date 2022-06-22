@@ -15,14 +15,14 @@ class GenerateThumbnails extends \Threaded
 
     public function __construct($thumbnail_data)
     {
-        ini_set('memory_limit', getenv('PHP_MEMORY_LIMIT'));
-
         $this->thumbnail_data = $thumbnail_data;
     }
 
     public function run()
     {
         $start  = microtime(true);
+
+        ini_set('memory_limit', getenv('PHP_MEMORY_LIMIT'));
 
         echo '[DEBUG] Configured memory limit... '.ini_get('memory_limit').'[/DEBUG]'.PHP_EOL;
 
