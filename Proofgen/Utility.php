@@ -26,24 +26,31 @@ class Utility {
         $contents = self::getContentsOfPath($originals_path);
         $images = $contents['images'];
 
-        echo 'Regenerating '.count($images).' proofs...'.PHP_EOL;
-        foreach($images as $image)
+        if(count($images))
         {
-            //$filename = $image['path'];
-            //Image::checkImageForThumbnails($class_path,$filename,$show,$class);
-            //echo $filename.' done'.PHP_EOL;
-            //unset($filename);
-            $to_thumbnail[] = [
-                'path' => $base_path.'/'.$show.'/'.$class,
-                'file' => $image['basename']
-            ];
-        }
+            echo 'Regenerating '.count($images).' proofs...'.PHP_EOL;
+            foreach($images as $image)
+            {
+                //$filename = $image['path'];
+                //Image::checkImageForThumbnails($class_path,$filename,$show,$class);
+                //echo $filename.' done'.PHP_EOL;
+                //unset($filename);
+                $to_thumbnail[] = [
+                    'path' => $base_path.'/'.$show.'/'.$class,
+                    'file' => $image['basename']
+                ];
+            }
 
-        if(count($to_thumbnail))
+            if(count($to_thumbnail))
+            {
+                echo 'Creating '.count($to_thumbnail).' thumbnails...'.PHP_EOL;
+                Image::batchGenerateThumbnails($to_thumbnail);
+                echo 'Thumbnails done.'.PHP_EOL;
+            }
+        }
+        else
         {
-            echo 'Creating '.count($to_thumbnail).' thumbnails...'.PHP_EOL;
-            Image::batchGenerateThumbnails($to_thumbnail);
-            echo 'Thumbnails done.'.PHP_EOL;
+            echo 'No images found in '.$class.' folder'.PHP_EOL;
         }
 
         unset($images);

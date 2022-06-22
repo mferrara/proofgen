@@ -178,7 +178,7 @@ class RegenerateProofs extends Command {
             $this->info('');
 
             // Upload any needed files
-            if(count($upload))
+            if(isset($upload) && count($upload))
             {
                 $this->info('Starting upload of '.count($upload).' thumbnails.');
                 try{
