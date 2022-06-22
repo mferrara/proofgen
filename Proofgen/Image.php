@@ -381,7 +381,7 @@ class Image {
         if(class_exists('\Pool'))
         {
             $count          = count($to_thumbnail);
-            $worker_count   = 8;
+            $worker_count   = getenv('PHP_POOL_THREAD_COUNT');
             echo 'Creating '.$count.' thumbnails with '.$worker_count.' concurrent generators...'.PHP_EOL;
 
             $start_time     = microtime(true);
