@@ -52,7 +52,7 @@ class CheckShow extends Command {
         $show_slug      = $this->ask('What show do you want to check?');
 
         // Get website response
-        $response       = file_get_contents('http://www.ferraraphoto.com/api/show/'.$show_slug.'/class-details');
+        $response       = file_get_contents('https://www.ferraraphoto.com/api/show/'.$show_slug.'/class-details');
         $response_array = json_decode($response);
 
         // Determine how many files we have locally
