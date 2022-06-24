@@ -368,7 +368,7 @@ class Image {
             $small_thumbnail    = file_get_contents($proofs_dest_path.'/'.$small_thumb_filename);
         } catch(Exception $e)
         {
-            echo 'Error encountered getting thumbnail ('.$proofs_dest_path.'/'.$small_thumb_filename.') from filesystem: '.$e->getMessage();
+            echo 'Error encountered getting thumbnail ('.$proofs_dest_path.'/'.$small_thumb_filename.') from filesystem: '.$e->getMessage().PHP_EOL;
             $error = true;
         }
 
@@ -376,7 +376,7 @@ class Image {
             $large_thumbnail    = file_get_contents($proofs_dest_path.'/'.$large_thumb_filename);
         } catch(Exception $e)
         {
-            echo 'Error encountered getting thumbnail ('.$proofs_dest_path.'/'.$large_thumb_filename.') from filesystem: '.$e->getMessage();
+            echo 'Error encountered getting thumbnail ('.$proofs_dest_path.'/'.$large_thumb_filename.') from filesystem: '.$e->getMessage().PHP_EOL;
             $error = true;
         }
 
