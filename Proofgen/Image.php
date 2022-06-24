@@ -362,13 +362,30 @@ class Image {
         $large_thumb_filename = $image_filename.$lrg_suf.'.jpg';
         $small_thumb_filename = $image_filename.$sml_suf.'.jpg';
         $proofs_dest_path   = getenv('FULLSIZE_HOME_DIR').'/'.$show_name.'/'.$class_name.'/proofs';
+        $error              = false;
 
-        $small_thumbnail    = file_get_contents($proofs_dest_path.'/'.$small_thumb_filename);
-        $large_thumbnail    = file_get_contents($proofs_dest_path.'/'.$large_thumb_filename);
+        try{
+            $small_thumbnail    = file_get_contents($proofs_dest_path.'/'.$small_thumb_filename);
+        } catch(Exception $e)
+        {
+            echo 'Error encountered getting thumbnail ('.$proofs_dest_path.'/'.$small_thumb_filename.') from filesystem: '.$e->getMessage();
+            $error = true;
+        }
 
-        // Copy the files from local to remote
-        $remote_fs->put($remote_path.'/'.$small_thumb_filename, $small_thumbnail);
-        $remote_fs->put($remote_path.'/'.$large_thumb_filename, $large_thumbnail);
+        try {
+            $large_thumbnail    = file_get_contents($proofs_dest_path.'/'.$large_thumb_filename);
+        } catch(Exception $e)
+        {
+            echo 'Error encountered getting thumbnail ('.$proofs_dest_path.'/'.$large_thumb_filename.') from filesystem: '.$e->getMessage();
+            $error = true;
+        }
+
+        if( ! $error)
+        {
+            // Copy the files from local to remote
+            $remote_fs->put($remote_path.'/'.$small_thumb_filename, $small_thumbnail);
+            $remote_fs->put($remote_path.'/'.$large_thumb_filename, $large_thumbnail);
+        }
 
         $small_thumbnail = null;
         unset($small_thumbnail);
