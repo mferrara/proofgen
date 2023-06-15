@@ -1,10 +1,11 @@
-<?php namespace App\Providers;
+<?php
+
+namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
 class CommandServiceProvider extends ServiceProvider
 {
-
     /**
      * Register any application services.
      *
@@ -12,6 +13,5 @@ class CommandServiceProvider extends ServiceProvider
      */
     public function register()
     {
-
     }
 }

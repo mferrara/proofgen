@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Proofgen\PooledJobs;
-
 
 use Proofgen\Image;
 
@@ -17,9 +15,9 @@ class UploadProof extends \Threaded
 
     public function run()
     {
-        $start  = microtime(true);
+        $start = microtime(true);
         Image::uploadThumbnail($this->upload);
-        $end    = microtime(true);
+        $end = microtime(true);
 
         $elapsed_time = ($end - $start);
 

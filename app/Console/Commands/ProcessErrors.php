@@ -1,11 +1,13 @@
-<?php namespace App\Console\Commands;
+<?php
+
+namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Proofgen\Utility;
 use Proofgen\Image;
+use Proofgen\Utility;
 
-class ProcessErrors extends Command {
-
+class ProcessErrors extends Command
+{
     /**
      * The console command name.
      *
@@ -29,19 +31,16 @@ class ProcessErrors extends Command {
     {
         ini_set('memory_limit', getenv('PHP_MEMORY_LIMIT'));
 
-        $base_path  = getenv('FULLSIZE_HOME_DIR');
+        $base_path = getenv('FULLSIZE_HOME_DIR');
 
         $errors = Utility::parseErrorLog();
 
-        if(count($errors))
-        {
-            foreach($errors as $key => $error)
-            {
+        if (count($errors)) {
+            foreach ($errors as $key => $error) {
                 $action = $error[0];
                 $data = $error[1];
 
-                if($action == 'upload')
-                {
+                if ($action == 'upload') {
                     $upload = [];
 
                     $data = explode('/', $data);
@@ -51,38 +50,31 @@ class ProcessErrors extends Command {
                     $contents = Utility::getContentsOfPath($base_path.'/'.$show.'/'.$class.'/proofs');
                     $thumbnails = $contents['images'];
 
-                    foreach($thumbnails as $thumb)
-                    {
-                        if(stristr($thumb['filename'], '_std'))
-                        {
+                    foreach ($thumbnails as $thumb) {
+                        if (stristr($thumb['filename'], '_std')) {
                             $filename = $thumb['filename'];
-                            $filename = str_replace('_std','',$filename);
+                            $filename = str_replace('_std', '', $filename);
                             $upload[] = [
                                 'show' => $show,
-                                'class'=> $class,
-                                'file' => $filename
+                                'class' => $class,
+                                'file' => $filename,
                             ];
                         }
                     }
 
-                    try{
+                    try {
                         Image::uploadThumbnails($upload);
 
                         $this->info('Upload complete, updating error log.');
                         unset($errors[$key]);
 
                         Utility::updateErrorLog($errors);
-                    }
-                    catch(\ErrorException $e)
-                    {
+                    } catch(\ErrorException $e) {
                         echo $e->getMessage();
                         throw $e;
                     }
                 }
             }
         }
-
-
     }
-
 }

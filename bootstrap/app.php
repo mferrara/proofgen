@@ -16,10 +16,10 @@ Dotenv::load(__DIR__.'/../');
 */
 
 $app = new Laravel\Lumen\Application(
-	realpath(__DIR__.'/../')
+    realpath(__DIR__.'/../')
 );
 
- $app->withFacades();
+$app->withFacades();
 
 // $app->withEloquent();
 
@@ -78,9 +78,9 @@ $app->singleton(
 |
 */
 
- $app->register(Bugsnag\BugsnagLaravel\BugsnagServiceProvider::class);
- //$app->register('App\Providers\AppServiceProvider');
- $app->register('App\Providers\CommandServiceProvider');
+$app->register(Bugsnag\BugsnagLaravel\BugsnagServiceProvider::class);
+//$app->register('App\Providers\AppServiceProvider');
+$app->register('App\Providers\CommandServiceProvider');
 
 /*
 |--------------------------------------------------------------------------

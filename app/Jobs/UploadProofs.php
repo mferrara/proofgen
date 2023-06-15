@@ -2,9 +2,9 @@
 
 namespace App\Jobs;
 
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Bus\SelfHandling;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\SerializesModels;
 use Proofgen\Image;
 
 class UploadProofs extends Job implements SelfHandling, ShouldQueue
