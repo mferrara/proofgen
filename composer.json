@@ -8,12 +8,13 @@
     "license": "MIT",
     "type": "project",
     "require": {
+        "laravel/framework": "5.1.*",
         "intervention/image": "~2.2",
         "league/flysystem-sftp": "^1.0",
         "bugsnag/bugsnag-laravel": "^2.0",
-        "ext-pthreads": "*",
+
         "ext-json": "*",
-        "laravel/framework": "5.1.*",
+        "ext-gd": "*",
         "php": ">=5.5.9"
     },
     "require-dev": {
@@ -33,14 +34,17 @@
     },
     "autoload-dev": {
         "classmap": [
-            "tests/TestCase.php"
+
         ]
     },
     "config": {
         "platform": {
             "php": "7.0.0"
         },
-        "preferred-install": "dist"
+        "preferred-install": "dist",
+        "allow-plugins": {
+            "kylekatarnls/update-helper": true
+        }
     },
     "scripts": {
         "post-root-package-install": [

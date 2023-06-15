@@ -14,6 +14,11 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         Commands\Inspire::class,
+        Commands\CheckShow::class,
+        Commands\ProcessErrors::class,
+        Commands\ProcessImages::class,
+        Commands\RegenerateProofs::class,
+        Commands\ReUpload::class
     ];
 
     /**
