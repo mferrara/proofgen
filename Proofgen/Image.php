@@ -2,6 +2,7 @@
 
 namespace Proofgen;
 
+use App\Jobs\GenerateThumbnail;
 use Exception;
 use Illuminate\Console\Command;
 use Intervention\Image\ImageManager;
@@ -355,8 +356,12 @@ class Image
 
         if (! $error) {
             // Copy the files from local to remote
-            $remote_fs->put($remote_path.'/'.$small_thumb_filename, $small_thumbnail);
-            $remote_fs->put($remote_path.'/'.$large_thumb_filename, $large_thumbnail);
+            try{
+                $remote_fs->put($remote_path.'/'.$small_thumb_filename, $small_thumbnail);
+                $remote_fs->put($remote_path.'/'.$large_thumb_filename, $large_thumbnail);
+            }catch(Exception $e){
+                throw $e;
+            }
         }
 
         $small_thumbnail = null;

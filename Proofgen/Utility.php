@@ -62,6 +62,8 @@ class Utility
         $directories = [];
         $images = [];
         foreach ($contents as $key => $object) {
+            if(str_contains($object['filename'], '.'))
+                continue;
             switch($object['type']) {
                 case 'dir':
                     $directories[] = $object;
@@ -209,7 +211,8 @@ class Utility
 
             foreach ($errors as $line) {
                 $values = explode(' ', $line);
-                $return[] = [$values[0], $values[1]];
+                if(count($values) > 1)
+                    $return[] = [$values[0], $values[1]];
             }
         }
 
