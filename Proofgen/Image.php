@@ -390,32 +390,8 @@ class Image
 
             echo 'Creating '.$count.' thumbnails (not threaded) ...'.PHP_EOL;
             foreach ($to_thumbnail as $key => $thumbnail_data) {
-                $start = microtime(true);
-
-                try {
-                    Image::checkImageForThumbnails($thumbnail_data['path'], $thumbnail_data['file']);
-                } catch(Exception $e) {
-                    echo 'Error creating thumbnails, resetting image.'.PHP_EOL;
-
-                    $temp_filename = 'temp'.rand(0, 999999).'.jpg';
-                    $flysystem = new Filesystem(new Adapter($thumbnail_data['path']));
-                    $flysystem->copy('originals/'.$thumbnail_data['file'], $temp_filename);
-
-                    echo 'Confirming reset of image.'.PHP_EOL;
-                    if ($flysystem->has($temp_filename)) {
-                        $flysystem->delete('originals/'.$thumbnail_data['file']);
-                        echo 'Original moved back to processing folder, ready to try again.'.PHP_EOL;
-                    }
-
-                    throw $e;
-                }
-
-                $end = microtime(true);
-
-                $elapsed_time = ($end - $start);
-                $message = '('.($key + 1).'/'.$count.') '.$thumbnail_data['path'].'/'.$thumbnail_data['file'].' thumbnailed in '.round($elapsed_time, 2).'s'.' - Current memory usage:   '.self::convert(memory_get_usage(true)).' ';
-
-                echo $message.PHP_EOL;
+                $job = (new GenerateThumbnail($thumbnail_data))->onQueue('default');
+                dispatch($job);
             }
         }
     }
