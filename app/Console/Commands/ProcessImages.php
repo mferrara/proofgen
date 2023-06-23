@@ -160,7 +160,8 @@ class ProcessImages extends Command
         // Create thumbnails
         if (count($to_thumbnail)) {
             $this->comment('Creating '.count($to_thumbnail).' thumbnails...');
-            Image::batchGenerateThumbnails($to_thumbnail);
+            $image_class = new Image();
+            $image_class->batchGenerateThumbnails($to_thumbnail);
         }
 
         // Upload any needed files

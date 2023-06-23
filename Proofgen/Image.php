@@ -5,6 +5,7 @@ namespace Proofgen;
 use App\Jobs\GenerateThumbnail;
 use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Foundation\Bus\DispatchesJobs;
 use Intervention\Image\ImageManager;
 use League\Flysystem\Adapter\Local as Adapter;
 use League\Flysystem\Filesystem;
@@ -15,6 +16,8 @@ use Proofgen\PooledJobs\UploadProof;
 
 class Image
 {
+    use DispatchesJobs;
+
     public static function processNewImage($class_path, $image, $proof_number, Command $terminal)
     {
         $home_dir = getenv('FULLSIZE_HOME_DIR');
@@ -370,7 +373,7 @@ class Image
         unset($large_thumbnail);
     }
 
-    public static function batchGenerateThumbnails($to_thumbnail)
+    public function batchGenerateThumbnails($to_thumbnail)
     {
         if (class_exists('\Pool') && getenv('POOLED_THUMBNAIL_GENERATION') === 'TRUE') {
             $count = count($to_thumbnail);
@@ -395,8 +398,8 @@ class Image
 
             echo 'Creating '.$count.' thumbnails (not threaded) ...'.PHP_EOL;
             foreach ($to_thumbnail as $key => $thumbnail_data) {
-                $job = (new GenerateThumbnail($thumbnail_data))->onQueue('default');
-                dispatch($job);
+                $job = (new GenerateThumbnail($thumbnail_data));
+                $this->dispatch($job);
             }
         }
     }
