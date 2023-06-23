@@ -112,6 +112,114 @@ class ProcessImages extends Command
                         // Generate a proof number (before the copy so we're not seeing/including the new file)
                         $proof_numbers = Image::generateProofNumbers($directory['path'], count($images));
 
+
+
+                        $maxProcesses = env('THREAD_COUNT'); // Max number of parallel processes
+                        $processCount = 0;
+                        $children = [];
+
+                        $pipes = [];
+
+                        // Cut the $images array down to $max_images
+                        if(count($images) > $max_images - $processed_count)
+                            $images = array_slice($images, 0, $max_images - $processed_count);
+
+                        foreach ($images as $image) {
+
+                            $pipe = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+                            if (!$pipe) {
+                                die('Could not create pipe');
+                            }
+
+                            $pipes[] = $pipe;
+
+                            $proof_number = array_shift($proof_numbers);
+
+                            $pid = pcntl_fork(); // Fork the process
+
+                            if ($pid == -1) {
+                                // Could not fork
+                                die("Could not fork the process\n");
+                            } elseif ($pid) {
+                                // We are the parent
+                                fclose($pipe[1]); // Close the unused write end in the parent
+
+                                $processCount++;
+                                $children[] = $pid;
+
+                                if ($processCount >= $maxProcesses) {
+                                    pcntl_wait($status); // Wait for any child process to finish
+                                    $processCount--;
+                                }
+                            } else {
+                                // This is the child process
+                                fclose($pipe[0]); // Close the unused read end in the child
+
+                                $start = microtime(true);
+                                $image_filename = Image::processNewImage($class_path, $image, $proof_number, $this);
+                                if ($image_filename) {
+                                    $data = [
+                                        'upload' => [
+                                            'path' => $class_path,
+                                            'file' => $image_filename,
+                                            'show' => $show_name,
+                                            'class' => $class_name,
+                                        ],
+                                        'to_thumbnail' => [
+                                            'path' => $class_path,
+                                            'file' => $image_filename,
+                                        ]
+                                    ];
+
+                                    // Write the data to the pipe
+                                    fwrite($pipe[1], serialize($data));
+                                    fclose($pipe[1]);
+                                }
+                                $end = microtime(true);
+                                $total = number_format(($end - $start));
+                                $processed_count++;
+                                echo 'Completed'.' - '.$class_name.'/'.$image['path'].' -> '.$class_name.'/'.$image_filename.' in '.$total.'s'.' ('.$processed_count.'/'.count($images).')' . "\n";
+
+                                exit(); // Important: end child process
+                            }
+                        }
+
+                        // Read data from pipes
+                        foreach ($pipes as $pipe) {
+                            $data = stream_get_contents($pipe[0]);
+                            fclose($pipe[0]);
+
+                            if ($data !== false) {
+                                $data = unserialize($data);
+                                $upload[] = $data['upload'];
+                                $to_thumbnail[] = $data['to_thumbnail'];
+                            }
+                        }
+
+                        // Wait for remaining child processes to finish
+                        while (count($children) > 0) {
+                            foreach ($children as $key => $pid) {
+                                $res = pcntl_waitpid($pid, $status, WNOHANG);
+
+                                if ($res == -1 || $res > 0) {
+                                    unset($children[$key]);
+                                }
+                            }
+                            sleep(1); // Avoid busy waiting
+                        }
+
+                        // Fill the results array outside of the fork loop
+                        foreach($images as $image){
+                            if (isset($results[$show_name][$class_name])) {
+                                $results[$show_name][$class_name]++;
+                            } else {
+                                $results[$show_name][$class_name] = 1;
+                            }
+
+                            $processed_count++;
+                        }
+
+                        /*
                         foreach ($images as $image) {
                             //$this->info('Importing '.$image['path'].'...');
                             $start = microtime(true);
@@ -151,6 +259,15 @@ class ProcessImages extends Command
 
                             $image_filename = null;
                             unset($image_filename);
+                        }
+                        */
+
+                        // Check to see if we've reached the $max_images configuration setting, if so break out of the loops.
+                        if ($processed_count >= $max_images) {
+                            $this->info('');
+                            $this->comment('Maximum images reached. Processing will continue next run.');
+                            $this->info('');
+                            break 2;
                         }
                     }
                 }

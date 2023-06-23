@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Jobs\Job;
 use Exception;
 use Illuminate\Contracts\Bus\SelfHandling;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use League\Flysystem\Adapter\Local as Adapter;
 use League\Flysystem\FileExistsException;
 use League\Flysystem\FileNotFoundException;

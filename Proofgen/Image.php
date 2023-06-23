@@ -396,10 +396,47 @@ class Image
         } else {
             $count = count($to_thumbnail);
 
-            echo 'Creating '.$count.' thumbnails (not threaded) ...'.PHP_EOL;
+            /**
             foreach ($to_thumbnail as $key => $thumbnail_data) {
-                $job = (new GenerateThumbnail($thumbnail_data));
-                $this->dispatch($job);
+            $job = (new GenerateThumbnail($thumbnail_data));
+            $this->dispatch($job);
+            }*/
+
+            $maxProcesses = env('THREAD_COUNT'); // Max number of parallel processes
+
+            echo 'Creating '.$count.' thumbnails (with '.$maxProcesses.' threads) ...'.PHP_EOL;
+
+            $processCount = 0;
+            $children = [];
+
+            foreach ($to_thumbnail as $key => $thumbnail_data) {
+
+                $pid = pcntl_fork(); // Fork the process
+
+                if ($pid == -1) {
+                    // Could not fork
+                    die("Could not fork the process\n");
+                } elseif ($pid) {
+                    // We are the parent
+                    $processCount++;
+                    $children[] = $pid;
+
+                    if ($processCount >= $maxProcesses) {
+                        pcntl_wait($status); // Wait for any child process to finish
+                        $processCount--;
+                    }
+                } else {
+                    // This is the child process
+                    $job = (new GenerateThumbnail($thumbnail_data));
+                    $this->dispatch($job);
+
+                    exit(); // Important: end child process
+                }
+            }
+
+            // Wait for all child processes to finish
+            foreach ($children as $pid) {
+                pcntl_waitpid($pid, $status);
             }
         }
     }
@@ -429,7 +466,8 @@ class Image
             echo 'Uploading '.$count.' thumbnails...'.PHP_EOL;
 
             $processed = 0;
-            $total_upload_time = 0;
+
+            /*
             foreach ($upload as $up) {
                 $start_time = microtime(true);
 
@@ -443,8 +481,52 @@ class Image
 
                 echo '('.$processed.'/'.count($upload).') - '.$up['file'].' uploaded in '.$upload_time.'s '.PHP_EOL;
             }
+            */
 
-            echo $processed.' out of '.$count.' thumbnails uploaded to remote server in '.$total_upload_time.' seconds '.PHP_EOL;
+            $maxProcesses = env('THREAD_COUNT'); // Max number of parallel processes
+
+            $processCount = 0;
+            $children = [];
+
+            foreach ($upload as $up) {
+
+                $processed++;
+
+                $pid = pcntl_fork(); // Fork the process
+
+                if ($pid == -1) {
+                    // Could not fork
+                    die("Could not fork the process\n");
+                } elseif ($pid) {
+                    // We are the parent
+                    $processCount++;
+                    $children[] = $pid;
+
+                    if ($processCount >= $maxProcesses) {
+                        pcntl_wait($status); // Wait for any child process to finish
+                        $processCount--;
+                    }
+                } else {
+                    // This is the child process
+                    $start_time = microtime(true);
+
+                    self::uploadThumbnail($up);
+
+                    $end_time = microtime(true);
+                    $upload_time = number_format(($end_time - $start_time));
+
+                    echo '('.$processed.'/'.count($upload).') - '.$up['file'].' uploaded in '.$upload_time.'s '.PHP_EOL;
+
+                    exit(); // Important: end child process
+                }
+            }
+
+            // Wait for all child processes to finish
+            foreach ($children as $pid) {
+                pcntl_waitpid($pid, $status);
+            }
+
+            echo $processed.' out of '.$count.' thumbnails uploaded to remote server'.PHP_EOL;
         }
     }
 
